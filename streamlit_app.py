@@ -249,7 +249,7 @@ if __name__ == "__main__":
     # cols[1].pyplot(g)
     bar_chart = alt.Chart(df_stats).mark_bar().encode(
         alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
-        alt.Y("count()").stack(None),
+        alt.Y("count()").bin(extent=[0, 100], step=20).stack(None),
         alt.Color("M:N")
     ).properties(
         width=200,
