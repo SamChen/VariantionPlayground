@@ -25,6 +25,7 @@ def generate_samples(
                                   size=n_subj)
     subj_means = np.abs(subj_means)
 
+    np.random.seed(seed+1)
     # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
     subj_vars = np.random.normal(within_subj_var_mean,
                                  np.sqrt(within_subj_var_std),
@@ -33,7 +34,7 @@ def generate_samples(
 
     samples = defaultdict(list)
     for idx, (subj_mean, subj_var) in enumerate(zip(subj_means, subj_vars)):
-        np.random.seed(seed+idx+1)
+        np.random.seed(seed+2+idx)
 
         # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
         subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
@@ -126,31 +127,31 @@ if __name__ == "__main__":
     # st.altair_chart(chart)
 
     latext = r'''
-             ## General process:
+    ## General process:
 
-             For each group:
+    For each group:
 
-             1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
+    1. Use ground truth $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
 
-             2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
-             3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
+    2. Use ground truth mean of within-subject variance and variance of within-subject variance to sample the $within\_subj\_var$ for each subject.
 
-             4. Measure the `actual` $within\_subj\_var$ and $between\_subj\_var$ from sampled values.
+    3. For each subject, we sample $M$ values/measurements from a normal distribution with the subject's mean and $within\_subj\_var$.
 
-             5. Calculate the overall variance: $ Var = \frac{1}{N} \frac{\frac{2}{M}*within\_subj\_var}{between\_subj\_var} $ where $N$ refers to the total number of subjects and $M$ refers total number of measurements per subject.
-                 -    $var_n = \frac{1}{N}*\sum_{m=1}^{M} (measurement_{(n,m)} - \bar{\mu_n})^2$
-                 -    $within\_subj\_var=\frac{1}{N}*\sum_{n=1}^{N} var_n$
-                 -    $between\_subj\_var=\frac{1}{N}*\sum_{n=1}^{N} (\mu_n - \bar{\mu})^2 $
+    4. Measure the actual $within\_subj\_var$ and $between\_subj\_var$ from sampled values.
 
-             6. Between subject mean: $between\_subj\_mean=\frac{1}{N}*\sum_{n=1}^{N} \mu$
+    5. Calculate the overall variance: $ Var = \frac{1}{N} \frac{\frac{2}{M}within\_subj\_var}{between\_subj\_var} $ where $N$ refers to the total number of subjects and $M$ refers to the total number of measurements per subject.
+        -    $var_n = \frac{1}{N}\sum_{m=1}^{M} (measurement_{(n,m)}-\bar{\mu_n})^2$
+        -    $within\_subj\_var=\frac{1}{N}\sum_{n=1}^{N} var_n$
+        -    $between\_subj\_var=\frac{1}{N}\sum_{n=1}^{N} (\mu_n - \bar{\mu})^2$
 
-             Calculate t-test between two groups given the $between\_subj\_mean$ and $Var$ obstained from sampled values.
+    6. Between subject mean: $between\_subj\_mean=\frac{1}{N}\sum_{n=1}^{N} \mu_n$
 
-             --------------------------------------------------
-             We repeat the above process for 100 times for each $M$ where $M\in[1,10]$ to see the distribution of p-value.
-             `We choose the repeat time to be 100 for fast rendering speed. It is a hacking choice.`
+    Calculate t-test between two groups given the $between\_subj\_mean$ and $Var$ obtained from sampled values.
 
-             '''
+    --------------------------------------------------
+    We repeat the above process for 100 times for each $M$ where $M\in[1,10]$ to see the distribution of p-value.
+    `We choose the repeat time to be 100 for fast rendering speed. It is a hacking choice.`
+    '''
     st.write(latext)
 
     st.write("## Playground")
@@ -160,10 +161,21 @@ if __name__ == "__main__":
             "default_gt_between_subj_var1": 0.52,
             "default_gt_within_subj_var_mean1": 0.1,
             "default_gt_within_subj_var_var1": 0.05,
-            "default_gt_between_subj_mean2": 2.0,
+            "default_gt_between_subj_mean2": 1.7 * 1.1,
             "default_gt_between_subj_var2": 0.52,
             "default_gt_within_subj_var_mean2": 0.1,
             "default_gt_within_subj_var_var2": 0.05,
+        },
+
+        "mimic pTau X10":{
+            "default_gt_between_subj_mean1": 1.7 * 10,
+            "default_gt_between_subj_var1": 0.52 * 10,
+            "default_gt_within_subj_var_mean1": 0.1 * 10,
+            "default_gt_within_subj_var_var1": 0.05 * 10,
+            "default_gt_between_subj_mean2": 1.7 * 1.1 * 10,
+            "default_gt_between_subj_var2": 0.52 * 10,
+            "default_gt_within_subj_var_mean2": 0.1 * 10,
+            "default_gt_within_subj_var_var2": 0.05 * 10,
         },
 
         "mimic GFAP":{
@@ -171,11 +183,31 @@ if __name__ == "__main__":
             "default_gt_between_subj_var1": 1126.6,
             "default_gt_within_subj_var_mean1": 255.5,
             "default_gt_within_subj_var_var1": 557058.0,
-            "default_gt_between_subj_mean2": 60.0,
+            "default_gt_between_subj_mean2": 70.2 * 1.1,
             "default_gt_between_subj_var2": 1126.6,
             "default_gt_within_subj_var_mean2": 255.5,
             "default_gt_within_subj_var_var2": 557058.0,
-        }
+        },
+        "mimic NfL":{
+            "default_gt_between_subj_mean1":    24.6,
+            "default_gt_between_subj_var1":     12.1,
+            "default_gt_within_subj_var_mean1": 3.4,
+            "default_gt_within_subj_var_var1":  20.5,
+            "default_gt_between_subj_mean2":    24.6 * 1.1,
+            "default_gt_between_subj_var2":     12.1,
+            "default_gt_within_subj_var_mean2": 3.4,
+            "default_gt_within_subj_var_var2":  20.5,
+        },
+        "mimic Flt1":{
+            "default_gt_between_subj_mean1":    134.8,
+            "default_gt_between_subj_var1":     22091.3,
+            "default_gt_within_subj_var_mean1": 468.1,
+            "default_gt_within_subj_var_var1":  1402354.4,
+            "default_gt_between_subj_mean2":    134.8 * 1.1,
+            "default_gt_between_subj_var2":     22091.3,
+            "default_gt_within_subj_var_mean2": 468.1,
+            "default_gt_within_subj_var_var2":  1402354.4,
+        },
     }
     with st.sidebar:
         with st.form("Predefined Configurations:"):
@@ -207,7 +239,16 @@ if __name__ == "__main__":
                                                      value=default_configuration["default_gt_within_subj_var_mean2"],format="%.2f")
         gt_within_subj_var_var2  = col2.number_input("Ground truth variance over within subject variance (group2): ",
                                                      value=default_configuration["default_gt_within_subj_var_var2"],format="%.2f")
+        # gt_between_subj_mean2_ratio    = col2.slider("Ground truth between subject mean (group2): ",                  0.0, 3.0, value=1.1, step=0.1)
+        # gt_between_subj_var2_ratio     = col2.slider("Ground truth between subject variance (group2): ",              0.0, 3.0, value=1.0, step=0.1)
+        # gt_within_subj_var_mean2_ratio = col2.slider("Ground truth mean over within subject variance (group2): ",     0.0, 3.0, value=1.0, step=0.1)
+        # gt_within_subj_var_var2_ratio  = col2.slider("Ground truth variance over within subject variance (group2): ", 0.0, 3.0, value=1.0, step=0.1)
         st.form_submit_button("Submit")
+
+    gt_between_subj_mean_ratio    =  gt_between_subj_mean2   / gt_between_subj_mean1
+    gt_between_subj_var_ratio     =  gt_between_subj_var2    / gt_between_subj_var1
+    gt_within_subj_var_mean_ratio =  gt_within_subj_var_mean2/ gt_within_subj_var_mean1
+    gt_within_subj_var_var_ratio  =  gt_within_subj_var_var2 / gt_within_subj_var_var1
 
     outputs = defaultdict(list)
     for m in range(2,12):
@@ -262,3 +303,11 @@ if __name__ == "__main__":
     )
     st.altair_chart(bar_chart)
 
+    st.write(f'''
+    |                               |   Value ratio (group2 / group1)                         |
+    |:----------------------------------------------------------:|:--------------------------:|
+    |Ground truth between subject mean                 | {gt_between_subj_mean_ratio}    |
+    |Ground truth between subject variance             | {gt_between_subj_var_ratio}     |
+    |Ground truth mean over within subject variance    | {gt_within_subj_var_mean_ratio} |
+    |Ground truth variance over within subject variance| {gt_within_subj_var_var_ratio } |
+                 ''')
