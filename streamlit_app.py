@@ -134,7 +134,6 @@ if __name__ == "__main__":
 
              2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
              3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
-                 -    [Optional] applying log transformation on sampled values.
 
              4. Measure the `actual` $within\_subj\_var$ and $between\_subj\_var$ from sampled values.
 
@@ -182,8 +181,9 @@ if __name__ == "__main__":
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             n_subj = st.number_input("Total number of subjets for each group: ", value=10)
-            apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
+            # apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
             st.form_submit_button("Submit")
+            apply_log = False
 
     default_configuration = predefined_configurations[selected_configuration]
     with st.form("Configuration:"):
@@ -249,7 +249,7 @@ if __name__ == "__main__":
     # cols[1].pyplot(g)
     bar_chart = alt.Chart(df_stats).mark_bar().encode(
         alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
-        alt.Y("count()").bin(extent=[0, 100], step=20).stack(None),
+        alt.Y("count()", scale=alt.Scale(domain=[0, 100])),
         alt.Color("M:N")
     ).properties(
         width=200,
