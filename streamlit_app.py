@@ -223,23 +223,23 @@ if __name__ == "__main__":
         col1,col2 = st.columns(2)
         col1.write("Group1:")
         gt_between_subj_mean1    = col1.number_input("Ground truth between subject mean (group1): ",
-                                                     value=default_configuration["default_gt_between_subj_mean1"],format="%.2f")
+                                                     value=default_configuration["default_gt_between_subj_mean1"],format="%.5f")
         gt_between_subj_var1     = col1.number_input("Ground truth between subject variance (group1): ",
-                                                     value=default_configuration["default_gt_between_subj_var1"],format="%.2f")
+                                                     value=default_configuration["default_gt_between_subj_var1"],format="%.5f")
         gt_within_subj_var_mean1 = col1.number_input("Ground truth mean over within subject variance (group1): ",
-                                                     value=default_configuration["default_gt_within_subj_var_mean1"],format="%.2f")
+                                                     value=default_configuration["default_gt_within_subj_var_mean1"],format="%.5f")
         gt_within_subj_var_var1  = col1.number_input("Ground truth variance over within subject variance (group1): ",
-                                                     value=default_configuration["default_gt_within_subj_var_var1"],format="%.2f")
+                                                     value=default_configuration["default_gt_within_subj_var_var1"],format="%.5f")
 
         col2.write("Group2:")
         gt_between_subj_mean2    = col2.number_input("Ground truth between subject mean (group2): ",
-                                                     value=default_configuration["default_gt_between_subj_mean2"],format="%.2f")
+                                                     value=default_configuration["default_gt_between_subj_mean2"],format="%.5f")
         gt_between_subj_var2     = col2.number_input("Ground truth between subject variance (group2): ",
-                                                     value=default_configuration["default_gt_between_subj_var2"],format="%.2f")
+                                                     value=default_configuration["default_gt_between_subj_var2"],format="%.5f")
         gt_within_subj_var_mean2 = col2.number_input("Ground truth mean over within subject variance (group2): ",
-                                                     value=default_configuration["default_gt_within_subj_var_mean2"],format="%.2f")
+                                                     value=default_configuration["default_gt_within_subj_var_mean2"],format="%.5f")
         gt_within_subj_var_var2  = col2.number_input("Ground truth variance over within subject variance (group2): ",
-                                                     value=default_configuration["default_gt_within_subj_var_var2"],format="%.2f")
+                                                     value=default_configuration["default_gt_within_subj_var_var2"],format="%.5f")
         # gt_between_subj_mean2_ratio    = col2.slider("Ground truth between subject mean (group2): ",                  0.0, 3.0, value=1.1, step=0.1)
         # gt_between_subj_var2_ratio     = col2.slider("Ground truth between subject variance (group2): ",              0.0, 3.0, value=1.0, step=0.1)
         # gt_within_subj_var_mean2_ratio = col2.slider("Ground truth mean over within subject variance (group2): ",     0.0, 3.0, value=1.0, step=0.1)
