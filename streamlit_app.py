@@ -19,21 +19,23 @@ def generate_samples(
     m, n_subj, groupid, seed):
 
     np.random.seed(seed)
+    # 1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
     subj_means = np.random.normal(between_subj_mean,
                                   np.sqrt(between_subj_var),
                                   size=n_subj)
     subj_means = np.abs(subj_means)
 
+    # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
     subj_vars = np.random.normal(within_subj_var_mean,
                                  np.sqrt(within_subj_var_std),
                                  size=n_subj)
     subj_vars = np.abs(subj_vars)
 
     samples = defaultdict(list)
-
     for idx, (subj_mean, subj_var) in enumerate(zip(subj_means, subj_vars)):
         np.random.seed(seed+idx+1)
 
+        # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
         subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
 
         samples["groupid"].extend([f"{groupid}" for i in subj_sample])
@@ -48,6 +50,7 @@ def stats_synthesize(
     m,
     n_subj,
     groupid,
+    apply_log,
     seed,
 ):
     group = generate_samples(
@@ -58,9 +61,19 @@ def stats_synthesize(
         groupid  = groupid ,
         seed     = seed
     )
-    act_std = np.sqrt(fn_variance_diff(within_subj_var=group.groupby("subid")["value"].var().mean(),
-                                       between_subj_var=group.groupby("subid")["value"].mean().var(),
+
+    # * optional
+    if apply_log:
+        group["value"] = group["value"].apply(lambda x: np.log(x+1))
+
+    # 4. Measure the `actual` $within\_subj\_var$ and $between\_subj\_var$ from sampled values.
+    act_within_subj_var=group.groupby("subid")["value"].var().mean()
+    act_between_subj_var=group.groupby("subid")["value"].mean().var()
+    # 5. Calculate the overall variance: $ Var = \frac{1}{N} \frac{\frac{2}{M}*within\_subj\_var}{between\_subj\_var} $ where $N$ refers to the total number of subjects and $M$ refers total number of measurements per subject.
+    act_std = np.sqrt(fn_variance_diff(within_subj_var=act_within_subj_var,
+                                       between_subj_var=act_between_subj_var,
                                        sample_size=m) / n_subj)
+    # 6. Between subject mean: $between\_subj\_mean=\frac{1}{N}*\sum_{n=1}^{N} \mu$
     act_mean = group.groupby("subid")["value"].mean().mean()
     return group, act_mean, act_std
 
@@ -113,26 +126,35 @@ if __name__ == "__main__":
     # st.altair_chart(chart)
 
     latext = r'''
-             General process:
+             ## General process:
 
              For each group:
 
-             1. Use ground truth between subject mean and between subject variance to sample the mean value for each subject
+             1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
 
-             2. Use ground truth mean over within subject variance and variance over within subject variance to sample the within_subj_var for each subject
+             2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
+             3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
+                 -    [Optional] applying log transformation on sampled values.
 
-             3. Measure the actual within_subj_var and between_subj_var from sampled values
+             4. Measure the `actual` $within\_subj\_var$ and $between\_subj\_var$ from sampled values.
 
-             4. Calculate the overall variance: $ Var = \frac{1}{n_{subj}} \frac{\frac{2}{m}*within\_subj\_var}{between\_subj\_var} $
+             5. Calculate the overall variance: $ Var = \frac{1}{N} \frac{\frac{2}{M}*within\_subj\_var}{between\_subj\_var} $ where $N$ refers to the total number of subjects and $M$ refers total number of measurements per subject.
+                 -    $var_n = \frac{1}{N}*\sum_{m=1}^{M} (measurement_{(n,m)} - \bar{\mu_n})^2$
+                 -    $within\_subj\_var=\frac{1}{N}*\sum_{n=1}^{N} var_n$
+                 -    $between\_subj\_var=\frac{1}{N}*\sum_{n=1}^{N} (\mu_n - \bar{\mu})^2 $
 
-             5. Calculate the overall mean: $ Mean$
+             6. Between subject mean: $between\_subj\_mean=\frac{1}{N}*\sum_{n=1}^{N} \mu$
 
-             Calculate t-test between two groups given the mean and variance obstained from sampled values.
+             Calculate t-test between two groups given the $between\_subj\_mean$ and $Var$ obstained from sampled values.
+
+             --------------------------------------------------
+             We repeat the above process for 100 times for each $M$ where $M\in[1,10]$ to see the distribution of p-value.
+             `We choose the repeat time to be 100 for fast rendering speed. It is a hacking choice.`
 
              '''
     st.write(latext)
 
-    st.write("## Impact of value range: ")
+    st.write("## Playground")
     predefined_configurations = {
         "mimic pTau":{
             "default_gt_between_subj_mean1": 1.7,
@@ -159,11 +181,12 @@ if __name__ == "__main__":
     with st.sidebar:
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
+            n_subj = st.number_input("Total number of subjets for each group: ", value=10)
+            apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
             st.form_submit_button("Submit")
 
     default_configuration = predefined_configurations[selected_configuration]
     with st.form("Configuration:"):
-        n_subj = st.number_input("Total number of subjets for each group: ", value=10)
         col1,col2 = st.columns(2)
         col1.write("Group1:")
         gt_between_subj_mean1    = col1.number_input("Ground truth between subject mean (group1): ",
@@ -187,7 +210,7 @@ if __name__ == "__main__":
         st.form_submit_button("Submit")
 
     outputs = defaultdict(list)
-    for m in range(2,11):
+    for m in range(2,12):
         for seed in range(0, 100):
             seed = seed * 10
             df1, act_mean1, act_std1 = stats_synthesize(
@@ -196,6 +219,7 @@ if __name__ == "__main__":
                 m = m,
                 n_subj = n_subj,
                 groupid = 1,
+                apply_log = apply_log,
                 seed = seed,
             )
 
@@ -205,32 +229,36 @@ if __name__ == "__main__":
                 m = m,
                 n_subj = n_subj,
                 groupid = 2,
+                apply_log = apply_log,
                 seed = seed,
             )
 
+            # Calculate t-test between two groups given the $between\_subj\_mean$ and $Var$ obstained from sampled values.
             tstat, pvalue = stats.ttest_ind_from_stats(act_mean1, act_std1, n_subj,
                                                        act_mean2, act_std2, n_subj)
             outputs["pvalue"].append(pvalue)
-            outputs["m"].append(m)
+            outputs["M"].append(m)
 
     df_stats = pd.DataFrame(outputs)
     # st.pyplot(sns.displot(df, x="pvalue", hue="m", palette="tab10"))
-    cols = st.columns(2)
-    cols[0].write(df1.groupby("subid")["value"].describe())
-    cols[0].write(df2.groupby("subid")["value"].describe())
+    # cols = st.columns(2)
+    # cols[0].write(df1.groupby("subid")["value"].describe())
+    # cols[0].write(df2.groupby("subid")["value"].describe())
 
     # g = sns.displot(df_stats, x="pvalue", col="m")
     # cols[1].pyplot(g)
     bar_chart = alt.Chart(df_stats).mark_bar().encode(
         alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
         alt.Y("count()").stack(None),
-        alt.Color("m:N")
+        alt.Color("M:N")
     ).properties(
         width=200,
         height=200
     ).facet(
-        facet="m:Q",
-        columns=3
+        facet="M:N",
+        columns=5
+    ).resolve_scale(
+        x='independent'
     )
-    cols[1].altair_chart(bar_chart)
+    st.altair_chart(bar_chart)
 
