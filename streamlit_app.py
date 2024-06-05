@@ -141,11 +141,10 @@ if __name__ == "__main__":
 
     5. Calculate the overall variance: $ Var = \frac{1}{N} \frac{\frac{2}{M}within\_subj\_var}{between\_subj\_var} $ where $N$ refers to the total number of subjects and $M$ refers to the total number of measurements per subject.
         -    $\mu_n = \frac{1}{M}\sum_{m=1}^{M} measurement_{(n,m)}$
-        -    $var_n = \frac{1}{N}\sum_{m=1}^{M} (measurement_{(n,m)}-\bar{\mu_n})^2$
+        -    $var_n = \frac{1}{M}\sum_{m=1}^{M} (measurement_{(n,m)}-\mu_n)^2$
         -    $within\_subj\_var=\frac{1}{N}\sum_{n=1}^{N} var_n$
+        -    $between\_subj\_mean=\bar{\mu}=\frac{1}{N}\sum_{n=1}^{N} \mu_n$
         -    $between\_subj\_var=\frac{1}{N}\sum_{n=1}^{N} (\mu_n - \bar{\mu})^2$
-
-    6. Between subject mean: $between\_subj\_mean=\frac{1}{N}\sum_{n=1}^{N} \mu_n$
 
     Calculate t-test between two groups given the $between\_subj\_mean$ and $Var$ obtained from sampled values.
 
