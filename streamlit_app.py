@@ -214,6 +214,7 @@ if __name__ == "__main__":
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             n_subj = st.number_input("Total number of subjets for each group: ", value=10)
             # apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
+            total_trials = st.number_input("Total number of simulation trials: ", value=100)
             st.form_submit_button("Submit")
             apply_log = False
 
@@ -252,7 +253,7 @@ if __name__ == "__main__":
 
     outputs = defaultdict(list)
     for m in range(2,12):
-        for seed in range(0, 100):
+        for seed in range(0, total_trials):
             seed = seed * 10
             df1, act_mean1, act_std1 = stats_synthesize(
                 gt_between_subj_mean1, gt_between_subj_var1,
@@ -281,6 +282,7 @@ if __name__ == "__main__":
             outputs["M"].append(m)
 
     df_stats = pd.DataFrame(outputs)
+    # st.write(df_stats)
     # st.pyplot(sns.displot(df, x="pvalue", hue="m", palette="tab10"))
     # cols = st.columns(2)
     # cols[0].write(df1.groupby("subid")["value"].describe())
@@ -288,9 +290,15 @@ if __name__ == "__main__":
 
     # g = sns.displot(df_stats, x="pvalue", col="m")
     # cols[1].pyplot(g)
-    bar_chart = alt.Chart(df_stats).mark_bar().encode(
-        alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
-        alt.Y("count()", scale=alt.Scale(domain=[0, 100])),
+    bar_chart = alt.Chart(df_stats).transform_density(
+        'pvalue',
+        groupby=['M'],
+        as_=['pvalue', 'density'],
+        extent=[0, 1],
+        counts=False,
+    ).mark_area().encode(
+        alt.X("pvalue:Q"),
+        alt.Y("density:Q"), # scale=alt.Scale(domain=[0, 100])),
         alt.Color("M:N")
     ).properties(
         width=200,
@@ -301,7 +309,9 @@ if __name__ == "__main__":
     ).resolve_scale(
         x='independent'
     )
-    st.altair_chart(bar_chart)
+    st.altair_chart(bar_chart, theme="streamlit")
+
+    # st.pyplot(sns.displot(x="pvalue", hue="M", col="M", kind="kde", data=df_stats))
 
     st.write(f'''
     |                               |   Value ratio (group2 / group1)                         |
