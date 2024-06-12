@@ -304,7 +304,7 @@ if __name__ == "__main__":
         pct='1 / datum.total'
     ).mark_bar().encode(
         alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
-        alt.Y("sum(pct):Q"),
+        alt.Y("sum(pct):Q").title("Percentage"),
         alt.Color("M:N")
     ).properties(
         width=200,
