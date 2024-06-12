@@ -148,9 +148,6 @@ if __name__ == "__main__":
 
     Calculate t-test between two groups given the $between\_subj\_mean$ and $Var$ obtained from sampled values.
 
-    --------------------------------------------------
-    We repeat the above process for 100 times for each $M$ where $M\in[1,10]$ to see the distribution of p-value.
-    `We choose the repeat time to be 100 for fast rendering speed. It is a hacking choice.`
     '''
     st.write(latext)
 
