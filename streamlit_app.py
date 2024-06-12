@@ -290,15 +290,21 @@ if __name__ == "__main__":
 
     # g = sns.displot(df_stats, x="pvalue", col="m")
     # cols[1].pyplot(g)
-    bar_chart = alt.Chart(df_stats).transform_density(
-        'pvalue',
-        groupby=['M'],
-        as_=['pvalue', 'density'],
-        extent=[0, 1],
-        counts=False,
-    ).mark_area().encode(
-        alt.X("pvalue:Q"),
-        alt.Y("density:Q"), # scale=alt.Scale(domain=[0, 100])),
+    # .transform_density(
+    #     'pvalue',
+    #     groupby=['M'],
+    #     as_=['pvalue', 'density'],
+    #     extent=[0, 1],
+    #     counts=False,
+    # )
+    bar_chart = alt.Chart(df_stats).transform_joinaggregate(
+        total='count(*)',
+        groupby=["M"]
+    ).transform_calculate(
+        pct='1 / datum.total'
+    ).mark_bar().encode(
+        alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
+        alt.Y("sum(pct):Q"),
         alt.Color("M:N")
     ).properties(
         width=200,
