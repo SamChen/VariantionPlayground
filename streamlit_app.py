@@ -9,122 +9,11 @@ from scipy import stats
 from itertools import product
 from collections import defaultdict
 
-def fn_variance_diff(within_subj_var, between_subj_var, sample_size):
-    return (2*within_subj_var) / sample_size + between_subj_var
-
-
-def generate_samples(
-    between_subj_mean, between_subj_var,
-    within_subj_var_mean, within_subj_var_std,
-    m, n_subj, groupid, seed):
-
-    np.random.seed(seed)
-    # 1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
-    subj_means = np.random.normal(between_subj_mean,
-                                  np.sqrt(between_subj_var),
-                                  size=n_subj)
-    subj_means = np.abs(subj_means)
-
-    np.random.seed(seed+1)
-    # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
-    subj_vars = np.random.normal(within_subj_var_mean,
-                                 np.sqrt(within_subj_var_std),
-                                 size=n_subj)
-    subj_vars = np.abs(subj_vars)
-
-    samples = defaultdict(list)
-    for idx, (subj_mean, subj_var) in enumerate(zip(subj_means, subj_vars)):
-        np.random.seed(seed+2+idx)
-
-        # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
-        subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
-
-        samples["groupid"].extend([f"{groupid}" for i in subj_sample])
-        samples["subid"].extend([f"{groupid}_{idx}" for i in subj_sample])
-        samples["value"].extend(subj_sample)
-    return pd.DataFrame(samples)
-
-
-def stats_synthesize(
-    between_subj_mean, between_subj_var,
-    within_subj_var_mean, within_subj_var_std,
-    m,
-    n_subj,
-    groupid,
-    apply_log,
-    seed,
-):
-    group = generate_samples(
-        between_subj_mean, between_subj_var,
-        within_subj_var_mean, within_subj_var_std,
-        m        = m       ,
-        n_subj   = n_subj  ,
-        groupid  = groupid ,
-        seed     = seed
-    )
-
-    # * optional
-    if apply_log:
-        group["value"] = group["value"].apply(lambda x: np.log(x+1))
-
-    # 4. Measure the `actual` $within\_subj\_var$ and $between\_subj\_var$ from sampled values.
-    act_within_subj_var=group.groupby("subid")["value"].var().mean()
-    act_between_subj_var=group.groupby("subid")["value"].mean().var()
-    # 5. Calculate the overall variance: $ Var = \frac{1}{N} \frac{\frac{2}{M}*within\_subj\_var}{between\_subj\_var} $ where $N$ refers to the total number of subjects and $M$ refers total number of measurements per subject.
-    act_std = np.sqrt(fn_variance_diff(within_subj_var=act_within_subj_var,
-                                       between_subj_var=act_between_subj_var,
-                                       sample_size=m) / n_subj)
-    # 6. Between subject mean: $between\_subj\_mean=\frac{1}{N}*\sum_{n=1}^{N} \mu$
-    act_mean = group.groupby("subid")["value"].mean().mean()
-    return group, act_mean, act_std
-
+from basic import *
 eps = 1e-8
 
 if __name__ == "__main__":
     st.set_page_config(layout="wide")
-
-    # data = defaultdict(list)
-    # m = st.slider("Sample size range 1 ($m$):",1, 10, value=10)
-    # values = [0.1, 0.5, 1.0, 5.0, 10.0]
-    # values = [0.1, 0.5, 1.0]
-    # ratioes = [0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10]
-    # for ratio, within_subj_var in product(ratioes, values):
-    #     between_subj_var = within_subj_var / ratio
-    #     for m in range(1,11):
-    #         var_diff = fn_variance_diff(within_subj_var, between_subj_var, m)
-    #         # var_diff_s2 = fn_variance_diff(within_subj_var, between_subj_var, s2)
-    #         # ratio = var_diff_s1 / var_diff_s2
-    #         data["Within_subj_var"].append(within_subj_var)
-    #         data["Between_subj_var"].append(between_subj_var)
-    #         data["Pair"].append(f"{within_subj_var}_{between_subj_var}")
-    #         data["Variance"].append(var_diff)
-    #         data["m"].append(m)
-    #         data["Ratio"].append(within_subj_var / between_subj_var)
-
-    # df = pd.DataFrame(data)
-    # st.write(df)
-    # latext = r'''
-    #          $$
-    #          Ratio = \frac{within\_subj\_var}{between\_subj\_var}
-    #          $$
-    #          '''
-    # st.write(latext)
-
-    # chart = alt.Chart(df).mark_line(point=True).encode(
-    #     alt.X("m"),
-    #     alt.Y("Variance"),
-    #     alt.Color("Pair:N", legend=alt.Legend(columns=2, symbolLimit=0)),
-    # ).properties(
-    #     width=250,
-    #     height=250
-    # ).facet(
-    #     facet="Ratio:N",
-    #     columns=3
-    # ).resolve_axis(
-    #     x='independent',
-    #     y='independent',
-    # )
-    # st.altair_chart(chart)
 
     latext = r'''
     ## General process:
@@ -209,16 +98,16 @@ if __name__ == "__main__":
     with st.sidebar:
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
-            n_subj = st.number_input("Total number of subjets for each group: ", value=10)
-            # apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
+            apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
             total_trials = st.number_input("Total number of simulation trials: ", value=100)
             st.form_submit_button("Submit")
-            apply_log = False
+            # apply_log = False
 
     default_configuration = predefined_configurations[selected_configuration]
     with st.form("Configuration:"):
         col1,col2 = st.columns(2)
         col1.write("Group1:")
+        n_subj1                  = col1.number_input("Total number of subjets for each group (group1): ", value=10)
         gt_between_subj_mean1    = col1.number_input("Ground truth between subject mean (group1): ",
                                                      value=default_configuration["default_gt_between_subj_mean1"],format="%.5f")
         gt_between_subj_var1     = col1.number_input("Ground truth between subject variance (group1): ",
@@ -229,6 +118,7 @@ if __name__ == "__main__":
                                                      value=default_configuration["default_gt_within_subj_var_var1"],format="%.5f")
 
         col2.write("Group2:")
+        n_subj2                  = col2.number_input("Total number of subjets for each group (group2): ", value=10)
         gt_between_subj_mean2    = col2.number_input("Ground truth between subject mean (group2): ",
                                                      value=default_configuration["default_gt_between_subj_mean2"],format="%.5f")
         gt_between_subj_var2     = col2.number_input("Ground truth between subject variance (group2): ",
@@ -237,16 +127,12 @@ if __name__ == "__main__":
                                                      value=default_configuration["default_gt_within_subj_var_mean2"],format="%.5f")
         gt_within_subj_var_var2  = col2.number_input("Ground truth variance over within subject variance (group2): ",
                                                      value=default_configuration["default_gt_within_subj_var_var2"],format="%.5f")
-        # gt_between_subj_mean2_ratio    = col2.slider("Ground truth between subject mean (group2): ",                  0.0, 3.0, value=1.1, step=0.1)
-        # gt_between_subj_var2_ratio     = col2.slider("Ground truth between subject variance (group2): ",              0.0, 3.0, value=1.0, step=0.1)
-        # gt_within_subj_var_mean2_ratio = col2.slider("Ground truth mean over within subject variance (group2): ",     0.0, 3.0, value=1.0, step=0.1)
-        # gt_within_subj_var_var2_ratio  = col2.slider("Ground truth variance over within subject variance (group2): ", 0.0, 3.0, value=1.0, step=0.1)
         st.form_submit_button("Submit")
 
-    gt_between_subj_mean_ratio    =  gt_between_subj_mean2   / gt_between_subj_mean1
-    gt_between_subj_var_ratio     =  gt_between_subj_var2    / gt_between_subj_var1
-    gt_within_subj_var_mean_ratio =  gt_within_subj_var_mean2/ gt_within_subj_var_mean1
-    gt_within_subj_var_var_ratio  =  gt_within_subj_var_var2 / gt_within_subj_var_var1
+    # gt_between_subj_mean_ratio    =  gt_between_subj_mean2   / gt_between_subj_mean1
+    # gt_between_subj_var_ratio     =  gt_between_subj_var2    / gt_between_subj_var1
+    # gt_within_subj_var_mean_ratio =  gt_within_subj_var_mean2/ gt_within_subj_var_mean1
+    # gt_within_subj_var_var_ratio  =  gt_within_subj_var_var2 / gt_within_subj_var_var1
 
     outputs = defaultdict(list)
     for m in range(2,12):
@@ -256,7 +142,7 @@ if __name__ == "__main__":
                 gt_between_subj_mean1, gt_between_subj_var1,
                 gt_within_subj_var_mean1, gt_within_subj_var_var1,
                 m = m,
-                n_subj = n_subj,
+                n_subj = n_subj1,
                 groupid = 1,
                 apply_log = apply_log,
                 seed = seed,
@@ -266,15 +152,15 @@ if __name__ == "__main__":
                 gt_between_subj_mean2, gt_between_subj_var2,
                 gt_within_subj_var_mean2, gt_within_subj_var_var2,
                 m = m,
-                n_subj = n_subj,
+                n_subj = n_subj2,
                 groupid = 2,
                 apply_log = apply_log,
                 seed = seed,
             )
 
             # Calculate t-test between two groups given the $between\_subj\_mean$ and $Var$ obstained from sampled values.
-            tstat, pvalue = stats.ttest_ind_from_stats(act_mean1, act_std1, n_subj,
-                                                       act_mean2, act_std2, n_subj)
+            tstat, pvalue = stats.ttest_ind_from_stats(act_mean1, act_std1, n_subj1,
+                                                       act_mean2, act_std2, n_subj2)
             outputs["pvalue"].append(pvalue)
             outputs["M"].append(m)
 
@@ -316,11 +202,11 @@ if __name__ == "__main__":
 
     # st.pyplot(sns.displot(x="pvalue", hue="M", col="M", kind="kde", data=df_stats))
 
-    st.write(f'''
-    |                               |   Value ratio (group2 / group1)                         |
-    |:----------------------------------------------------------:|:--------------------------:|
-    |Ground truth between subject mean                 | {gt_between_subj_mean_ratio}    |
-    |Ground truth between subject variance             | {gt_between_subj_var_ratio}     |
-    |Ground truth mean over within subject variance    | {gt_within_subj_var_mean_ratio} |
-    |Ground truth variance over within subject variance| {gt_within_subj_var_var_ratio } |
-                 ''')
+    # st.write(f'''
+    # |                               |   Value ratio (group2 / group1)                         |
+    # |:----------------------------------------------------------:|:--------------------------:|
+    # |Ground truth between subject mean                 | {gt_between_subj_mean_ratio}    |
+    # |Ground truth between subject variance             | {gt_between_subj_var_ratio}     |
+    # |Ground truth mean over within subject variance    | {gt_within_subj_var_mean_ratio} |
+    # |Ground truth variance over within subject variance| {gt_within_subj_var_var_ratio } |
+    #              ''')
