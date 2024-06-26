@@ -1,0 +1,72 @@
+# syntax=v1
+
+def build():
+    base(image="ubuntu:20.04", dev=True)
+    install.apt_packages(name=["ripgrep", "libyaml-dev", "g++", "libgl1", "git", "cmake"])
+# install.conda()
+    install.python()
+#    run(["pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu"])
+    install.python_packages(name=[
+            "pyyaml",
+            "pandas",
+            "scipy",
+            "numpy",
+            "cython",
+            "ipython",
+            "jupyterlab",
+            "altair",
+            "vl-convert-python",
+            "matplotlib",
+            "seaborn",
+            "rpy2",
+            "tqdm",
+            "dask[dataframe]",
+            "statsmodels"
+    ])
+
+    install.r_lang()
+    install.r_packages(name=[
+            "lm",
+            "ggplot2",
+            "nloptr",
+            "lmerTest",
+            "lme4",
+            "dplyr"
+    ])
+
+#    configure_jupyter(8888)
+    configure_streamlit(9999)
+
+
+def configure_streamlit(port):
+    install.python_packages(
+        [
+        "streamlit"
+        ]
+    )
+    runtime.expose(envd_port=port, host_port=port, service="streamlit")
+
+# runtime.daemon(commands=[["jupyterlab --NotebookApp.token='' --port 6006 --no-browser --ip=\"0.0.0.0\" --allow-root --NotebookApp.iopub_msg_rate_limit=1000000.0 --NotebookApp.iopub_data_rate_limit=100000000.0 --NotebookApp.notebook_dir=/"]])
+#     runtime.daemon(commands=[["jupyter-lab --NotebookApp.token='' --port 8888 --no-browser --ip=\"0.0.0.0\""]])
+
+# def configure_jupyter(port):
+#     install.python_packages(
+#         [
+#             "jupyterlab",
+#             "jupyterlab-vim",
+#         ]
+#     )
+#     runtime.expose(envd_port=port, host_port=port, service="jupyterlab")
+# # runtime.daemon(commands=[["jupyterlab --NotebookApp.token='' --port 6006 --no-browser --ip=\"0.0.0.0\" --allow-root --NotebookApp.iopub_msg_rate_limit=1000000.0 --NotebookApp.iopub_data_rate_limit=100000000.0 --NotebookApp.notebook_dir=/"]])
+#     runtime.daemon(commands=[["jupyter-lab --NotebookApp.token='' --port 8888 --no-browser --ip=\"0.0.0.0\""]])
+
+
+# def build():
+#     # config.repo(url="https://github.com/tensorchord/envd", description="envd quick start example")
+#     base(os="ubuntu20.04", language="python3")
+#     # Configure pip index if needed.
+#     # config.pip_index(url = "https://pypi.tuna.tsinghua.edu.cn/simple")
+#     install.python_packages(name = [
+#         "numpy",
+#     ])
+#     shell("zsh")
