@@ -13,7 +13,7 @@ from collections import defaultdict
 if __name__ == "__main__":
     st.set_page_config(layout="wide")
 
-    st.write("## Playground")
+    st.write("## Charts: how M & N impact the outcome of Lmer model")
 
     with st.sidebar:
         with st.form("Options:"):
