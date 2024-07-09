@@ -9,8 +9,6 @@ from scipy import stats
 from itertools import product
 from collections import defaultdict
 
-import statsmodels.formula.api as smf
-
 # import sys
 # sys.path.append("../")
 # from basic import generate_samples, fn_variance_diff
