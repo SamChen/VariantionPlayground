@@ -26,9 +26,9 @@ def lmer_r(data, formula):
     # sleepstudy = pd.read_csv("sleepstudy.csv")
     # st.write(sleepstudy)
     with conversion.localconverter(default_converter + pandas2ri.converter):
-        stats     = importr("stats")
-        base      = importr('base')
-        lme4_r    = importr('lme4')
+        # stats     = importr("stats")
+        # base      = importr('base')
+        # lme4_r    = importr('lme4')
         lme4_test = importr('lmerTest')
 
         r_out = lme4_test.lmer(formula, dat=data)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
             total_trials = st.number_input("Total number of simulation trials: ", value=10)
-            sample_size = st.number_input("Sample size: ", value=10)
+            sample_size = st.number_input("Sample size: ", value=18)
             lmer_formula = st.text_input("Formula for Lmer: ", value="value ~ groupid + (groupid|subid)")
             st.form_submit_button("Submit")
             # apply_log = False
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         outputs = defaultdict(list)
         for m in range(2,12):
             for seed in range(0, total_trials):
-                seed = seed * 10
+                seed = seed * 100
                 group1 = stats_synthesize(
                     gt_between_subj_mean1, gt_between_subj_var1,
                     gt_within_subj_var_left1, gt_within_subj_var_right1,
