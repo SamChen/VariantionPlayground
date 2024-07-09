@@ -26,10 +26,10 @@ def lmer_r(data, formula):
     # sleepstudy = pd.read_csv("sleepstudy.csv")
     # st.write(sleepstudy)
     with conversion.localconverter(default_converter + pandas2ri.converter):
-        stats = rpackages.importr("stats")
-        base = rpackages.importr('base')
-        lme4_r = rpackages.importr('lme4')
-        lme4_test = rpackages.importr('lmerTest')
+        stats     = importr("stats")
+        base      = importr('base')
+        lme4_r    = importr('lme4')
+        lme4_test = importr('lmerTest')
 
         r_out = lme4_test.lmer(formula, dat=data)
         # r_out = lme4_test.lmer("Reaction~Days + (Days|Subject)", dat=sleepstudy)
