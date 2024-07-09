@@ -20,11 +20,6 @@ from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
 import rpy2.robjects.packages as rpackages
 
-# r-cran-lmerTest
-# r-cran-lme4
-
-
-
 @st.cache_data
 def lmer_r(data, formula):
     output = {}
@@ -129,7 +124,7 @@ if __name__ == "__main__":
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
-            total_trials = st.number_input("Total number of simulation trials: ", value=100)
+            total_trials = st.number_input("Total number of simulation trials: ", value=10)
             sample_size = st.number_input("Sample size: ", value=10)
             lmer_formula = st.text_input("Formula for Lmer: ", value="value ~ groupid + (groupid|subid)")
             st.form_submit_button("Submit")
@@ -191,8 +186,6 @@ if __name__ == "__main__":
                 pvalue = lmer_r(df, lmer_formula)
                 outputs["pvalue"].append(pvalue)
                 outputs["M"].append(m)
-                break
-            break
 
         df_stats = pd.DataFrame(outputs)
         df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
