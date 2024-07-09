@@ -1,5 +1,5 @@
 r-base
 r-base-dev
 cmake
-r-crn-lme4
+r-cran-lme4
 r-cran-lmertest
