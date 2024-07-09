@@ -18,6 +18,11 @@ from rpy2.robjects import r, globalenv, conversion, default_converter
 from rpy2.robjects.packages import importr, data
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
+import rpy2.robjects.packages as rpackages
+
+# r-cran-lmerTest
+# r-cran-lme4
+
 
 
 @st.cache_data
@@ -26,10 +31,10 @@ def lmer_r(data, formula):
     # sleepstudy = pd.read_csv("sleepstudy.csv")
     # st.write(sleepstudy)
     with conversion.localconverter(default_converter + pandas2ri.converter):
-        stats = importr("stats")
-        base = importr('base')
-        lme4_r = importr('lme4')
-        lme4_test = importr('lmerTest')
+        stats = rpackages.importr("stats")
+        base = rpackages.importr('base')
+        lme4_r = rpackages.importr('lme4')
+        lme4_test = rpackages.importr('lmerTest')
 
         r_out = lme4_test.lmer(formula, dat=data)
         # r_out = lme4_test.lmer("Reaction~Days + (Days|Subject)", dat=sleepstudy)

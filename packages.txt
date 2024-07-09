@@ -1,4 +1,2 @@
 r-base
 r-base-dev
-r-cran-lmerTest
-r-cran-lme4
