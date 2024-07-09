@@ -27,8 +27,8 @@ def lmer_r(data, formula):
     # st.write(sleepstudy)
     with conversion.localconverter(default_converter + pandas2ri.converter):
         # stats     = importr("stats")
-        # base      = importr('base')
         # lme4_r    = importr('lme4')
+        base      = importr('base')
         lme4_test = importr('lmerTest')
 
         r_out = lme4_test.lmer(formula, dat=data)
