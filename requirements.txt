@@ -5,3 +5,5 @@ seaborn
 numpy
 pandas
 scipy
+rpy2
+vl-convert-python
