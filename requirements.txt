@@ -5,3 +5,8 @@ seaborn
 numpy
 pandas
 scipy
+
+r-base
+r-base-dev
+r-cran-lmerTest
+r-cran-lme4

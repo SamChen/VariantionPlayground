@@ -48,4 +48,4 @@ if __name__ == "__main__":
         color='gray'
     )
     st.altair_chart(bar_chart, theme="streamlit")
-    # bar_chart.save(f"statistic_estimation_{sample_size}.png", ppi=400)
+    bar_chart.save(f"statistic_estimation_{sample_size}.png", ppi=400)

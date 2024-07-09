@@ -184,31 +184,33 @@ if __name__ == "__main__":
                     seed = seed,
                 )
 
-                df = pd.concat([group1, group2])
+                df = pd.concat([group1, group2]).reset_index(drop=True)
                 pvalue = lmer_r(df, lmer_formula)
-
                 outputs["pvalue"].append(pvalue)
                 outputs["M"].append(m)
+                break
+            break
 
         df_stats = pd.DataFrame(outputs)
         df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
-    # bar_chart = alt.Chart(df_stats).transform_joinaggregate(
-    #     total='count(*)',
-    #     groupby=["M"]
-    # ).transform_calculate(
-    #     pct='1 / datum.total'
-    # ).mark_bar().encode(
-    #     alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
-    #     alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
-    #     alt.Color("M:N")
-    # ).properties(
-    #     width=200,
-    #     height=200
-    # ).facet(
-    #     facet="M:N",
-    #     columns=5
-    # ).resolve_scale(
-    #     x='independent'
-    # )
-    # st.altair_chart(bar_chart, theme="streamlit")
-    # st.write(df_stats)
+
+    bar_chart = alt.Chart(df_stats).transform_joinaggregate(
+        total='count(*)',
+        groupby=["M"]
+    ).transform_calculate(
+        pct='1 / datum.total'
+    ).mark_bar().encode(
+        alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
+        alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
+        alt.Color("M:N")
+    ).properties(
+        width=200,
+        height=200
+    ).facet(
+        facet="M:N",
+        columns=5
+    ).resolve_scale(
+        x='independent'
+    )
+    st.altair_chart(bar_chart, theme="streamlit")
+    st.write(df_stats)
