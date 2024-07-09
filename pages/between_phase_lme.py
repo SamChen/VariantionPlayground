@@ -208,4 +208,4 @@ if __name__ == "__main__":
         x='independent'
     )
     st.altair_chart(bar_chart, theme="streamlit")
-    st.write(df_stats)
+    # st.write(df_stats)
