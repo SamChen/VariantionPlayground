@@ -157,38 +157,37 @@ if __name__ == "__main__":
         st.form_submit_button("Submit")
 
 
-    for sample_size in [18, 24, 36]:
-        outputs = defaultdict(list)
-        for m in range(2,12):
-            for seed in range(0, total_trials):
-                seed = seed * 100
-                group1 = stats_synthesize(
-                    gt_between_subj_mean1, gt_between_subj_var1,
-                    gt_within_subj_var_left1, gt_within_subj_var_right1,
-                    m = m,
-                    n_subj = sample_size,
-                    groupid = 0,
-                    apply_log = apply_log,
-                    seed = seed,
-                )
+    outputs = defaultdict(list)
+    for m in range(2,12):
+        for seed in range(0, total_trials):
+            seed = seed * 100
+            group1 = stats_synthesize(
+                gt_between_subj_mean1, gt_between_subj_var1,
+                gt_within_subj_var_left1, gt_within_subj_var_right1,
+                m = m,
+                n_subj = sample_size,
+                groupid = 0,
+                apply_log = apply_log,
+                seed = seed,
+            )
 
-                group2 = stats_synthesize(
-                    gt_between_subj_mean2, gt_between_subj_var2,
-                    gt_within_subj_var_left2, gt_within_subj_var_right2,
-                    m = m,
-                    n_subj = sample_size,
-                    groupid = 1,
-                    apply_log = apply_log,
-                    seed = seed,
-                )
+            group2 = stats_synthesize(
+                gt_between_subj_mean2, gt_between_subj_var2,
+                gt_within_subj_var_left2, gt_within_subj_var_right2,
+                m = m,
+                n_subj = sample_size,
+                groupid = 1,
+                apply_log = apply_log,
+                seed = seed,
+            )
 
-                df = pd.concat([group1, group2]).reset_index(drop=True)
-                pvalue = lmer_r(df, lmer_formula)
-                outputs["pvalue"].append(pvalue)
-                outputs["M"].append(m)
+            df = pd.concat([group1, group2]).reset_index(drop=True)
+            pvalue = lmer_r(df, lmer_formula)
+            outputs["pvalue"].append(pvalue)
+            outputs["M"].append(m)
 
-        df_stats = pd.DataFrame(outputs)
-        df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
+    df_stats = pd.DataFrame(outputs)
+    # df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
 
     bar_chart = alt.Chart(df_stats).transform_joinaggregate(
         total='count(*)',
