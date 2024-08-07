@@ -15,11 +15,11 @@ from collections import defaultdict
 import statsmodels.formula.api as smf
 eps = 1e-8
 
-from rpy2.robjects import r, globalenv, conversion, default_converter
-from rpy2.robjects.packages import importr, data
-from rpy2.robjects import pandas2ri
-from rpy2.robjects.conversion import localconverter
-import rpy2.robjects.packages as rpackages
+# from rpy2.robjects import r, globalenv, conversion, default_converter
+# from rpy2.robjects.packages import importr, data
+# from rpy2.robjects import pandas2ri
+# from rpy2.robjects.conversion import localconverter
+# import rpy2.robjects.packages as rpackages
 
 # @st.cache_data
 def lmer_r(data, formula):
@@ -84,7 +84,7 @@ def generate_samples(
         # samples["subid"].extend([f"{idx}" for i in subj_sample])
         samples["Subid"].extend([idx for i in subj_sample])
         samples["value"].extend(subj_sample)
-        samples["ithMeasurement"].extend([i for i in range(1,m+1)])
+        samples["ithMeasurement"].extend([i+groupid*m for i in range(1,m+1)])
 
     return pd.DataFrame(samples)
 
@@ -151,29 +151,29 @@ if __name__ == "__main__":
 
     default_configuration = predefined_configurations[selected_configuration]
     with st.form("Configuration:"):
-        lmer_formula = st.text_input("Formula for linear mixed model (fixed effects): ", value="value ~  Phaseid + ithMeasurement")
+        lmer_formula = st.text_input("Formula for linear mixed model (fixed effects): ", value="value ~  Phaseid")
         target_var  = st.text_input("Variable that we are interested in", value="Phaseid")
         col1,col2 = st.columns(2)
         col1.write("Phase 1:")
-        # n_subj1                  = col1.number_input("Total number of subjets for each group (group1): ", value=10)
-        gt_between_subj_mean1    = col1.number_input("Ground truth between subject mean (group1): ",
+        # n_subj1                  = col1.number_input("Total number of subjets for each Phase (Phase1): ", value=10)
+        gt_between_subj_mean1    = col1.number_input("Ground truth between subject mean (Phase1): ",
                                                      value=default_configuration["default_gt_between_subj_mean1"],format="%.5f")
-        gt_between_subj_var1     = col1.number_input("Ground truth between subject variance (group1): ",
+        gt_between_subj_var1     = col1.number_input("Ground truth between subject variance (Phase1): ",
                                                      value=default_configuration["default_gt_between_subj_var1"],format="%.5f")
-        gt_within_subj_var_left1 = col1.number_input("Ground truth lower boundary within subject variance (group1): ",
+        gt_within_subj_var_left1 = col1.number_input("Ground truth lower boundary within subject variance (Phase1): ",
                                                      value=default_configuration["default_gt_within_subj_var_left1"],format="%.5f")
-        gt_within_subj_var_right1 = col1.number_input("Ground truth upper boundary within subject variance (group1): ",
+        gt_within_subj_var_right1 = col1.number_input("Ground truth upper boundary within subject variance (Phase1): ",
                                                      value=default_configuration["default_gt_within_subj_var_right1"],format="%.5f")
 
         col2.write("Phase 2:")
-        # n_subj2                  = col2.number_input("Total number of subjets for each group (group2): ", value=10)
-        gt_between_subj_mean2    = col2.number_input("Ground truth between subject mean (group2): ",
+        # n_subj2                  = col2.number_input("Total number of subjets for each Phase (Phase2): ", value=10)
+        gt_between_subj_mean2    = col2.number_input("Ground truth between subject mean (Phase2): ",
                                                      value=default_configuration["default_gt_between_subj_mean2"],format="%.5f")
-        gt_between_subj_var2     = col2.number_input("Ground truth between subject variance (group2): ",
+        gt_between_subj_var2     = col2.number_input("Ground truth between subject variance (Phase2): ",
                                                      value=default_configuration["default_gt_between_subj_var2"],format="%.5f")
-        gt_within_subj_var_left2 = col2.number_input("Ground truth lower boundary within subject variance (group2): ",
+        gt_within_subj_var_left2 = col2.number_input("Ground truth lower boundary within subject variance (Phase2): ",
                                                      value=default_configuration["default_gt_within_subj_var_left2"],format="%.5f")
-        gt_within_subj_var_right2 = col2.number_input("Ground truth upper boundary within subject variance (group2): ",
+        gt_within_subj_var_right2 = col2.number_input("Ground truth upper boundary within subject variance (Phase2): ",
                                                      value=default_configuration["default_gt_within_subj_var_right2"],format="%.5f")
         st.form_submit_button("Submit")
 
@@ -200,6 +200,7 @@ if __name__ == "__main__":
                 groupid = 1,
                 apply_log = apply_log,
                 seed = seed+50,
+                # seed = seed,
             )
 
             df = pd.concat([group1, group2]).reset_index(drop=True)

@@ -13,9 +13,16 @@ from basic import *
 eps = 1e-8
 
 if __name__ == "__main__":
-    st.set_page_config(layout="wide")
+    st.set_page_config(
+        layout="wide",
+        page_title="Hello",
+        page_icon="👋",
+    )
 
-    latext = r'''Research results expectation
-    '''
-    st.title(latext)
+    st.write("# Research results expectation! 👋")
+
+    st.write("## Project introduction")
+    st.write('''
+             ''')
+
 
