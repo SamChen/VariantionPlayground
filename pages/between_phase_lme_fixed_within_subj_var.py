@@ -177,9 +177,14 @@ if __name__ == "__main__":
     st.write("The within-subj var:")
     st.write("Phase1: ", gt_within_subj_var_value1, ", Phase2: ", gt_within_subj_var_value2)
 
+    progress_text = "Operation in progress. Please wait."
+    my_bar = st.progress(0.0, text=progress_text)
     outputs = defaultdict(list)
     for m in range(2,12):
         for seed in range(0, total_trials):
+            percent_complete = ((m-2) * total_trials + seed+1) / (10 * total_trials)
+            my_bar.progress(percent_complete, text=progress_text)
+
             seed = seed * 100
             group1 = stats_synthesize(
                 gt_between_subj_mean1, gt_between_subj_var1,
