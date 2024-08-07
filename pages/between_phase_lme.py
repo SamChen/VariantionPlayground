@@ -144,15 +144,15 @@ if __name__ == "__main__":
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
-            total_trials = st.number_input("Total number of simulation trials: ", value=10)
+            total_trials = st.number_input("Total number of simulation trials: ", value=100)
             sample_size = st.number_input("Sample size: ", value=18)
-            lmer_formula = st.text_input("Formula for Lmer: ", value="value ~  Phaseid + C(ithMeasurement)")
-            target_var  = st.text_input("Variable that we are interested in", value="Phaseid")
             st.form_submit_button("Submit")
             # apply_log = False
 
     default_configuration = predefined_configurations[selected_configuration]
     with st.form("Configuration:"):
+        lmer_formula = st.text_input("Formula for linear mixed model (fixed effects): ", value="value ~  Phaseid + ithMeasurement")
+        target_var  = st.text_input("Variable that we are interested in", value="Phaseid")
         col1,col2 = st.columns(2)
         col1.write("Phase 1:")
         # n_subj1                  = col1.number_input("Total number of subjets for each group (group1): ", value=10)
