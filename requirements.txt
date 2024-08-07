@@ -5,5 +5,5 @@ seaborn
 numpy
 pandas
 scipy
-rpy2
+statsmodels
 vl-convert-python
