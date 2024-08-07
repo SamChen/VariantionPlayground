@@ -3,8 +3,8 @@
 def build():
     base(image="ubuntu:20.04", dev=True)
     install.apt_packages(name=["ripgrep", "libyaml-dev", "g++", "libgl1", "git", "cmake"])
-# install.conda()
-    install.python()
+    install.conda()
+    install.python("3.11")
 #    run(["pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu"])
     install.python_packages(name=[
             "pyyaml",
@@ -21,8 +21,27 @@ def build():
             "rpy2",
             "tqdm",
             "dask[dataframe]",
-            "statsmodels"
+            "statsmodels",
+            "juliacall"
     ])
+
+
+    install.julia()
+    install.julia_packages(name=[
+            # "GenieFramework",
+            "DataFrames",
+            "DataFramesMeta",
+            "CSV",
+            "MixedModels",
+            "Pluto",
+            "Distributions",
+            "Random",
+            "IterTools",
+            "PlotlyJS",
+            "Kaleido"
+    ])
+    install.vscode_extensions(["julialang.language-julia"])
+
 
     install.r_lang()
     install.r_packages(name=[
