@@ -9,9 +9,11 @@ from scipy import stats
 from itertools import product
 from collections import defaultdict
 
-# import sys
-# sys.path.append("../")
 # from basic import generate_samples, fn_variance_diff
+# import os
+# import sys
+# sys.path.append(".")
+# from src.simulation import *
 import statsmodels.formula.api as smf
 eps = 1e-8
 
@@ -51,6 +53,7 @@ def lmer_py(data, formula):
     # mdf = md.fit()
     return mdf
 
+
 def generate_samples(
     between_subj_mean, between_subj_var,
     gt_within_subj_var_value,
@@ -76,13 +79,12 @@ def generate_samples(
         np.random.seed(seed+2+idx)
 
         # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
-        subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
+        if subj_var == 0:
+            subj_sample = [subj_mean for i in range(m)]
+        else:
+            subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
 
-        # samples["groupid"].extend([f"{groupid}" for i in subj_sample])
-        # samples["groupid"].extend([groupid for i in subj_sample])
         samples["Phaseid"].extend([groupid for i in subj_sample])
-        # samples["subid"].extend([f"{groupid}_{idx}" for i in subj_sample])
-        # samples["subid"].extend([f"{idx}" for i in subj_sample])
         samples["Subid"].extend([idx for i in subj_sample])
         samples["value"].extend(subj_sample)
         samples["ithMeasurement"].extend([i+groupid*m for i in range(1,m+1)])
@@ -120,8 +122,6 @@ def stats_synthesize(
     # # act_between_subj_var=group.groupby("subid")["value"].mean().var()
 
     return group
-    # return group, act_mean, act_std
-
 
 
 if __name__ == "__main__":
@@ -206,20 +206,46 @@ if __name__ == "__main__":
                 groupid = 1,
                 apply_log = apply_log,
                 seed = seed+50,
-                # seed = seed,
             )
 
             df = pd.concat([group1, group2]).reset_index(drop=True)
             # pvalue = lmer_r(df, lmer_formula)
             # outputs["pvalue"].append(pvalue)
-            # st.write("R: ", pvalue)
             out = lmer_py(df, lmer_formula)
-            # st.write(out.summary())
-            # break
             outputs["pvalue"].append(out.pvalues.loc[target_var])
             outputs["M"].append(m)
 
+            if m == 1:
+                group1 = stats_synthesize(
+                    gt_between_subj_mean1, gt_between_subj_var1,
+                    gt_within_subj_var_value=0,
+                    m = m,
+                    n_subj = sample_size,
+                    groupid = 0,
+                    apply_log = apply_log,
+                    seed = seed,
+                )
+
+                group2 = stats_synthesize(
+                    gt_between_subj_mean2, gt_between_subj_var2,
+                    gt_within_subj_var_value=0,
+                    m = m,
+                    n_subj = sample_size,
+                    groupid = 1,
+                    apply_log = apply_log,
+                    seed = seed+50,
+                )
+
+                df = pd.concat([group1, group2]).reset_index(drop=True)
+                # pvalue = lmer_r(df, lmer_formula)
+                # outputs["pvalue"].append(pvalue)
+                out = lmer_py(df, lmer_formula)
+                outputs["pvalue"].append(out.pvalues.loc[target_var])
+                outputs["M"].append(0.5)
+
     df_stats = pd.DataFrame(outputs)
+    df_stats["M"] = df_stats["M"].apply(lambda x: "1 var=0" if x == 0.5 else int(x))
+    sorted_M = ['1 var=0'] + [str(i) for i in range(m0, mE)]
     # df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
 
     bar_chart = alt.Chart(df_stats).transform_joinaggregate(
@@ -230,12 +256,13 @@ if __name__ == "__main__":
     ).mark_bar().encode(
         alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
         alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
-        alt.Color("M:N")
+        alt.Color("M:N", sort=sorted_M)
     ).properties(
         width=200,
         height=200
     ).facet(
-        facet="M:N",
+        # facet="M:N",
+        alt.Facet('M:N', sort=sorted_M),
         columns=5
     ).resolve_scale(
         x='independent'

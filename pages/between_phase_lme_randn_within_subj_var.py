@@ -65,27 +65,28 @@ def generate_samples(
 
     np.random.seed(seed+1)
     # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
-    subj_vars = np.random.uniform(low=within_subj_var_left,
-                                  high=within_subj_var_right,
-                                  size=n_subj)
-    subj_vars = np.abs(subj_vars)
+    if (within_subj_var_left == 0) and (within_subj_var_right ==0):
+        subj_vars = [0 for _ in range(n_subj)]
+    else:
+        subj_vars = np.random.uniform(low =within_subj_var_left,
+                                      high=within_subj_var_right,
+                                      size=n_subj)
+        subj_vars = np.abs(subj_vars)
 
     samples = defaultdict(list)
     for idx, (subj_mean, subj_var) in enumerate(zip(subj_means, subj_vars)):
         np.random.seed(seed+2+idx)
 
         # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
-        subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
+        if subj_var == 0:
+            subj_sample = [subj_mean for i in range(m)]
+        else:
+            subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
 
-        # samples["groupid"].extend([f"{groupid}" for i in subj_sample])
-        # samples["groupid"].extend([groupid for i in subj_sample])
         samples["Phaseid"].extend([groupid for i in subj_sample])
-        # samples["subid"].extend([f"{groupid}_{idx}" for i in subj_sample])
-        # samples["subid"].extend([f"{idx}" for i in subj_sample])
         samples["Subid"].extend([idx for i in subj_sample])
         samples["value"].extend(subj_sample)
         samples["ithMeasurement"].extend([i+groupid*m for i in range(1,m+1)])
-
     return pd.DataFrame(samples)
 
 def stats_synthesize(
@@ -207,20 +208,46 @@ if __name__ == "__main__":
                 groupid = 1,
                 apply_log = apply_log,
                 seed = seed+50,
-                # seed = seed,
             )
 
             df = pd.concat([group1, group2]).reset_index(drop=True)
             # pvalue = lmer_r(df, lmer_formula)
             # outputs["pvalue"].append(pvalue)
-            # st.write("R: ", pvalue)
             out = lmer_py(df, lmer_formula)
-            # st.write(out.summary())
-            # break
             outputs["pvalue"].append(out.pvalues.loc[target_var])
             outputs["M"].append(m)
 
+            if m == 1:
+                group1 = stats_synthesize(
+                    gt_between_subj_mean1, gt_between_subj_var1,
+                    0, 0,
+                    m = m,
+                    n_subj = sample_size,
+                    groupid = 0,
+                    apply_log = apply_log,
+                    seed = seed,
+                )
+
+                group2 = stats_synthesize(
+                    gt_between_subj_mean2, gt_between_subj_var2,
+                    0, 0,
+                    m = m,
+                    n_subj = sample_size,
+                    groupid = 1,
+                    apply_log = apply_log,
+                    seed = seed+50,
+                )
+
+                df = pd.concat([group1, group2]).reset_index(drop=True)
+                # pvalue = lmer_r(df, lmer_formula)
+                # outputs["pvalue"].append(pvalue)
+                out = lmer_py(df, lmer_formula)
+                outputs["pvalue"].append(out.pvalues.loc[target_var])
+                outputs["M"].append(0.5)
+
     df_stats = pd.DataFrame(outputs)
+    df_stats["M"] = df_stats["M"].apply(lambda x: "1 var=0" if x == 0.5 else int(x))
+    sorted_M = ['1 var=0'] + [str(i) for i in range(m0, mE)]
     # df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
 
     bar_chart = alt.Chart(df_stats).transform_joinaggregate(
@@ -231,15 +258,15 @@ if __name__ == "__main__":
     ).mark_bar().encode(
         alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
         alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
-        alt.Color("M:N")
+        alt.Color("M:N", sort=sorted_M)
     ).properties(
         width=200,
         height=200
     ).facet(
-        facet="M:N",
+        # facet="M:N",
+        alt.Facet('M:N', sort=sorted_M),
         columns=5
     ).resolve_scale(
         x='independent'
     )
     st.altair_chart(bar_chart, theme="streamlit")
-    # st.write(df_stats)
