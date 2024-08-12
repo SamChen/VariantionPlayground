@@ -180,7 +180,7 @@ if __name__ == "__main__":
     progress_text = "Operation in progress. Please wait."
     my_bar = st.progress(0.0, text=progress_text)
     outputs = defaultdict(list)
-    for m in range(2,12):
+    for m in range(1,11):
         for seed in range(0, total_trials):
             percent_complete = ((m-2) * total_trials + seed+1) / (10 * total_trials)
             my_bar.progress(percent_complete, text=progress_text)
