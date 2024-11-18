@@ -123,6 +123,44 @@ def stats_synthesize(
 
     return group
 
+def draw_bar(df, group, sorted_groups, title, xname="Pvalue", fontsize = 18):
+    base = alt.Chart().transform_joinaggregate(
+        total='count(*)',
+        groupby=[group]
+    ).transform_calculate(
+        pct='1 / datum.total'
+    )
+    bar = base.mark_bar().encode(
+        alt.X(f"{xname}:Q").bin(extent=[0, 1], step=0.05).title("Pvalue"),
+        alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
+        alt.Color(f"{group}:N", sort=sorted_groups)
+    )
+    rule = base.mark_rule(color="red").encode(
+        # alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
+        alt.Y("threshold:Q"),
+    )
+
+
+    bar_chart = alt.layer(bar, rule).transform_calculate(
+        threshold="0.8"
+    ).properties(
+        width=300,
+        height=300,
+    ).facet(
+        # facet="M:N",
+        alt.Facet(f"{group}:N", sort=sorted_groups, header=alt.Header(labelFontSize=fontsize, titleFontSize=fontsize)),
+        columns=3,
+        data=df,
+        title=title,
+    ).resolve_scale(
+        x='independent'
+    ).configure_axis(
+        labelFontSize = fontsize,
+        titleFontSize = fontsize,
+    ).configure_title(
+        fontSize= fontsize+6
+    )
+    return bar_chart
 
 if __name__ == "__main__":
     st.set_page_config(layout="wide")
@@ -143,7 +181,7 @@ if __name__ == "__main__":
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
-            total_trials = st.number_input("Total number of simulation trials: ", value=100)
+            total_trials = st.number_input("Total number of simulation trials: ", value=10)
             sample_size = st.number_input("Sample size: ", value=18)
             st.form_submit_button("Submit")
             # apply_log = False
@@ -181,10 +219,11 @@ if __name__ == "__main__":
     my_bar = st.progress(0.0, text=progress_text)
     outputs = defaultdict(list)
     m0 = 1
-    mE = 11
+    # mE = 11
+    mE = 7
     for m in range(m0, mE):
         for seed in range(0, total_trials):
-            percent_complete = ((m-m0) * total_trials + seed+1) / (10 * total_trials)
+            percent_complete = ((m-m0) * total_trials + seed+1) / ((mE-m0) * total_trials)
             my_bar.progress(percent_complete, text=progress_text)
 
             seed = seed * 100
@@ -206,6 +245,7 @@ if __name__ == "__main__":
                 groupid = 1,
                 apply_log = apply_log,
                 seed = seed+50,
+                # seed = seed,
             )
 
             df = pd.concat([group1, group2]).reset_index(drop=True)
@@ -215,57 +255,44 @@ if __name__ == "__main__":
             outputs["pvalue"].append(out.pvalues.loc[target_var])
             outputs["M"].append(m)
 
-            if m == 1:
-                group1 = stats_synthesize(
-                    gt_between_subj_mean1, gt_between_subj_var1,
-                    gt_within_subj_var_value=0,
-                    m = m,
-                    n_subj = sample_size,
-                    groupid = 0,
-                    apply_log = apply_log,
-                    seed = seed,
-                )
+            # if m == 1:
+            #     group1 = stats_synthesize(
+            #         gt_between_subj_mean1, gt_between_subj_var1,
+            #         gt_within_subj_var_value=0,
+            #         m = m,
+            #         n_subj = sample_size,
+            #         groupid = 0,
+            #         apply_log = apply_log,
+            #         seed = seed,
+            #     )
 
-                group2 = stats_synthesize(
-                    gt_between_subj_mean2, gt_between_subj_var2,
-                    gt_within_subj_var_value=0,
-                    m = m,
-                    n_subj = sample_size,
-                    groupid = 1,
-                    apply_log = apply_log,
-                    seed = seed+50,
-                )
+            #     group2 = stats_synthesize(
+            #         gt_between_subj_mean2, gt_between_subj_var2,
+            #         gt_within_subj_var_value=0,
+            #         m = m,
+            #         n_subj = sample_size,
+            #         groupid = 1,
+            #         apply_log = apply_log,
+            #         seed = seed+50,
+            #     )
 
-                df = pd.concat([group1, group2]).reset_index(drop=True)
-                # pvalue = lmer_r(df, lmer_formula)
-                # outputs["pvalue"].append(pvalue)
-                out = lmer_py(df, lmer_formula)
-                outputs["pvalue"].append(out.pvalues.loc[target_var])
-                outputs["M"].append(0.5)
+            #     df = pd.concat([group1, group2]).reset_index(drop=True)
+            #     # pvalue = lmer_r(df, lmer_formula)
+            #     # outputs["pvalue"].append(pvalue)
+            #     out = lmer_py(df, lmer_formula)
+            #     outputs["pvalue"].append(out.pvalues.loc[target_var])
+            #     outputs["M"].append(0.5)
 
     df_stats = pd.DataFrame(outputs)
     df_stats["M"] = df_stats["M"].apply(lambda x: "1 var=0" if x == 0.5 else int(x))
-    sorted_M = ['1 var=0'] + [str(i) for i in range(m0, mE)]
+    # sorted_M = ['1 var=0'] + [str(i) for i in range(m0, mE)]
+    sorted_M = [str(i) for i in range(m0, mE)]
     # df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
+    group = "M"
+    bar_chart = draw_bar(df_stats, group, sorted_groups=sorted_M, title=f"Sample size: {sample_size}",
+                         xname="pvalue")
 
-    bar_chart = alt.Chart(df_stats).transform_joinaggregate(
-        total='count(*)',
-        groupby=["M"]
-    ).transform_calculate(
-        pct='1 / datum.total'
-    ).mark_bar().encode(
-        alt.X("pvalue:Q").bin(extent=[0, 1], step=0.05),
-        alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
-        alt.Color("M:N", sort=sorted_M)
-    ).properties(
-        width=200,
-        height=200
-    ).facet(
-        # facet="M:N",
-        alt.Facet('M:N', sort=sorted_M),
-        columns=5
-    ).resolve_scale(
-        x='independent'
-    )
+    bar_chart.save(f"outputs/pTau217_n{sample_size}.png", ppi=400)
+    df_stats.to_csv(f"outputs/pTau217_n{sample_size}.csv")
     st.altair_chart(bar_chart, theme="streamlit")
     # st.write(df_stats)

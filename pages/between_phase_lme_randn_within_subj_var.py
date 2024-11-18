@@ -208,6 +208,7 @@ if __name__ == "__main__":
                 groupid = 1,
                 apply_log = apply_log,
                 seed = seed+50,
+                # seed = seed,
             )
 
             df = pd.concat([group1, group2]).reset_index(drop=True)
