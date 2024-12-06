@@ -199,9 +199,9 @@ if __name__ == "__main__":
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
-            total_trials = st.number_input("Total number of simulation trials: ", value=10)
+            total_trials = st.number_input("Total number of simulation trials: ", value=20)
             # sample_size = st.number_input("Sample size: ", value=18)
-            sample_sizes = st.pills("Sample size: ", options=[18,24,32,48], selection_mode="multi", default=[18, 24,32])
+            sample_sizes = st.pills("Sample size: ", options=[18,24,32,48], selection_mode="multi", default=[18,24,32,48])
             st.form_submit_button("Submit")
             # apply_log = False
 
