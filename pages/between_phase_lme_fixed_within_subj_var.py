@@ -91,6 +91,7 @@ def generate_samples(
 
     return pd.DataFrame(samples)
 
+@st.cache_data
 def stats_synthesize(
     between_subj_mean, between_subj_var,
     gt_within_subj_var_value,
@@ -140,7 +141,6 @@ def draw_bar(df, group, sorted_groups, title, xname="Pvalue", fontsize = 18):
         alt.Y("threshold:Q"),
     )
 
-
     bar_chart = alt.layer(bar, rule).transform_calculate(
         threshold="0.8"
     ).properties(
@@ -162,27 +162,58 @@ def draw_bar(df, group, sorted_groups, title, xname="Pvalue", fontsize = 18):
     )
     return bar_chart
 
+
+def draw_line(df, pvalue_threshold = 0.05):
+    df = df.copy()
+    df[f"pvalue lower than {pvalue_threshold}"] = df["pvalue"] <= pvalue_threshold
+    sign_df = df.groupby(["M","sample_size"])[f"pvalue lower than {pvalue_threshold}"].aggregate(["sum", "count"]).reset_index()
+    sign_df["Percentage"] = sign_df["sum"] / sign_df["count"]
+
+    base = alt.Chart(sign_df)
+    line = base.mark_line() + base.mark_circle()
+    line = line.encode(
+        alt.X("M:O"),
+        alt.Y("Percentage", scale=alt.Scale(domain=[0, 1.0])),
+        alt.Color("sample_size:O", scale=alt.Scale(scheme="set2"))
+    )
+    rule = base.mark_rule(color="red").encode(
+        # alt.Y("sum(pct):Q", scale=alt.Scale(domain=[0, 1.0])).title("Percentage"),
+        alt.Y("threshold:Q"),
+    )
+    chart = alt.layer(line, rule).transform_calculate(
+        threshold="0.8"
+    ).properties(
+        width=1000,
+        height=500,
+    )
+    return chart
+
 if __name__ == "__main__":
     st.set_page_config(layout="wide")
 
     st.write("## Playground")
-    predefined_configurations = {
-        "mimic pTau":{
-            "default_gt_between_subj_mean1": 0.41,
-            "default_gt_between_subj_var1": 0.053,
-            "default_gt_within_subj_percentage1":  10.0,
+    import yaml
+    with open("predefined_biomarker_config.yaml", 'r') as f:
+        predefined_configurations = yaml.safe_load(f)["crossover_study"]
+    st.write(predefined_configurations)
+    # predefined_configurations = {
+    #     "mimic pTau":{
+    #         "default_gt_between_subj_mean1": 0.41,
+    #         "default_gt_between_subj_var1": 0.053,
+    #         "default_gt_within_subj_percentage1":  10.0,
 
-            "default_gt_between_subj_mean2": 0.34,
-            "default_gt_between_subj_var2": 0.014,
-            "default_gt_within_subj_percentage2":  10.0,
-        },
-    }
+    #         "default_gt_between_subj_mean2": 0.34,
+    #         "default_gt_between_subj_var2": 0.014,
+    #         "default_gt_within_subj_percentage2":  10.0,
+    #     },
+    # }
     with st.sidebar:
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
             apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
             total_trials = st.number_input("Total number of simulation trials: ", value=10)
-            sample_size = st.number_input("Sample size: ", value=18)
+            # sample_size = st.number_input("Sample size: ", value=18)
+            sample_sizes = st.pills("Sample size: ", options=[18,24,32,48], selection_mode="multi", default=[18, 24,32])
             st.form_submit_button("Submit")
             # apply_log = False
 
@@ -215,73 +246,75 @@ if __name__ == "__main__":
     st.write("The within-subj var:")
     st.write("Phase1: ", gt_within_subj_var_value1, ", Phase2: ", gt_within_subj_var_value2)
 
-    progress_text = "Operation in progress. Please wait."
-    my_bar = st.progress(0.0, text=progress_text)
     outputs = defaultdict(list)
     m0 = 1
-    # mE = 11
-    mE = 7
-    for m in range(m0, mE):
-        for seed in range(0, total_trials):
-            percent_complete = ((m-m0) * total_trials + seed+1) / ((mE-m0) * total_trials)
-            my_bar.progress(percent_complete, text=progress_text)
+    mE = 11
+    # mE = 7
+    for sample_size in sample_sizes:
+        progress_text = f"Operation on sample size {sample_size} is in progress. Please wait."
+        my_bar = st.progress(0.0, text=progress_text)
+        for m in range(m0, mE):
+            for seed in range(0, total_trials):
+                percent_complete = ((m-m0) * total_trials + seed+1) / ((mE-m0) * total_trials)
+                my_bar.progress(percent_complete, text=progress_text)
 
-            seed = seed * 100
-            group1 = stats_synthesize(
-                gt_between_subj_mean1, gt_between_subj_var1,
-                gt_within_subj_var_value1,
-                m = m,
-                n_subj = sample_size,
-                groupid = 0,
-                apply_log = apply_log,
-                seed = seed,
-            )
+                seed = seed * 100
+                group1 = stats_synthesize(
+                    gt_between_subj_mean1, gt_between_subj_var1,
+                    gt_within_subj_var_value1,
+                    m = m,
+                    n_subj = sample_size,
+                    groupid = 0,
+                    apply_log = apply_log,
+                    seed = seed,
+                )
 
-            group2 = stats_synthesize(
-                gt_between_subj_mean2, gt_between_subj_var2,
-                gt_within_subj_var_value2,
-                m = m,
-                n_subj = sample_size,
-                groupid = 1,
-                apply_log = apply_log,
-                seed = seed+50,
-                # seed = seed,
-            )
+                group2 = stats_synthesize(
+                    gt_between_subj_mean2, gt_between_subj_var2,
+                    gt_within_subj_var_value2,
+                    m = m,
+                    n_subj = sample_size,
+                    groupid = 1,
+                    apply_log = apply_log,
+                    seed = seed+50,
+                    # seed = seed,
+                )
 
-            df = pd.concat([group1, group2]).reset_index(drop=True)
-            # pvalue = lmer_r(df, lmer_formula)
-            # outputs["pvalue"].append(pvalue)
-            out = lmer_py(df, lmer_formula)
-            outputs["pvalue"].append(out.pvalues.loc[target_var])
-            outputs["M"].append(m)
+                df = pd.concat([group1, group2]).reset_index(drop=True)
+                # pvalue = lmer_r(df, lmer_formula)
+                # outputs["pvalue"].append(pvalue)
+                out = lmer_py(df, lmer_formula)
+                outputs["sample_size"].append(sample_size)
+                outputs["pvalue"].append(out.pvalues.loc[target_var])
+                outputs["M"].append(m)
 
-            # if m == 1:
-            #     group1 = stats_synthesize(
-            #         gt_between_subj_mean1, gt_between_subj_var1,
-            #         gt_within_subj_var_value=0,
-            #         m = m,
-            #         n_subj = sample_size,
-            #         groupid = 0,
-            #         apply_log = apply_log,
-            #         seed = seed,
-            #     )
+                # if m == 1:
+                #     group1 = stats_synthesize(
+                #         gt_between_subj_mean1, gt_between_subj_var1,
+                #         gt_within_subj_var_value=0,
+                #         m = m,
+                #         n_subj = sample_size,
+                #         groupid = 0,
+                #         apply_log = apply_log,
+                #         seed = seed,
+                #     )
 
-            #     group2 = stats_synthesize(
-            #         gt_between_subj_mean2, gt_between_subj_var2,
-            #         gt_within_subj_var_value=0,
-            #         m = m,
-            #         n_subj = sample_size,
-            #         groupid = 1,
-            #         apply_log = apply_log,
-            #         seed = seed+50,
-            #     )
+                #     group2 = stats_synthesize(
+                #         gt_between_subj_mean2, gt_between_subj_var2,
+                #         gt_within_subj_var_value=0,
+                #         m = m,
+                #         n_subj = sample_size,
+                #         groupid = 1,
+                #         apply_log = apply_log,
+                #         seed = seed+50,
+                #     )
 
-            #     df = pd.concat([group1, group2]).reset_index(drop=True)
-            #     # pvalue = lmer_r(df, lmer_formula)
-            #     # outputs["pvalue"].append(pvalue)
-            #     out = lmer_py(df, lmer_formula)
-            #     outputs["pvalue"].append(out.pvalues.loc[target_var])
-            #     outputs["M"].append(0.5)
+                #     df = pd.concat([group1, group2]).reset_index(drop=True)
+                #     # pvalue = lmer_r(df, lmer_formula)
+                #     # outputs["pvalue"].append(pvalue)
+                #     out = lmer_py(df, lmer_formula)
+                #     outputs["pvalue"].append(out.pvalues.loc[target_var])
+                #     outputs["M"].append(0.5)
 
     df_stats = pd.DataFrame(outputs)
     df_stats["M"] = df_stats["M"].apply(lambda x: "1 var=0" if x == 0.5 else int(x))
@@ -289,10 +322,13 @@ if __name__ == "__main__":
     sorted_M = [str(i) for i in range(m0, mE)]
     # df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")
     group = "M"
-    bar_chart = draw_bar(df_stats, group, sorted_groups=sorted_M, title=f"Sample size: {sample_size}",
-                         xname="pvalue")
 
-    bar_chart.save(f"outputs/pTau217_n{sample_size}.png", ppi=400)
-    df_stats.to_csv(f"outputs/pTau217_n{sample_size}.csv")
-    st.altair_chart(bar_chart, theme="streamlit")
-    # st.write(df_stats)
+    chart = draw_line(df_stats, pvalue_threshold=0.05)
+    st.altair_chart(chart, theme=None)
+
+    # bar_chart = draw_bar(df_stats, group, sorted_groups=sorted_M, title=f"Sample size: {sample_size}",
+    #                      xname="pvalue")
+
+    # bar_chart.save(f"outputs/pTau217_n{sample_size}.png", ppi=400)
+    # df_stats.to_csv(f"outputs/pTau217_n{sample_size}.csv")
+    # st.altair_chart(bar_chart, theme="streamlit")
