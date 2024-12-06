@@ -3,6 +3,7 @@ import altair as alt
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import yaml
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -52,7 +53,6 @@ def lmer_py(data, formula):
     assert mdf.converged == True
     # mdf = md.fit()
     return mdf
-
 
 def generate_samples(
     between_subj_mean, between_subj_var,
@@ -192,7 +192,6 @@ if __name__ == "__main__":
     st.set_page_config(layout="wide")
 
     st.write("## Playground")
-    import yaml
     with open("predefined_biomarker_config.yaml", 'r') as f:
         predefined_configurations = yaml.safe_load(f)["crossover_study"]
     st.write(predefined_configurations)
