@@ -77,7 +77,7 @@ def basic_synthesis_data_numba(subj_means, subj_vars, seed, groupid, m):
     samples_ithMeasurement = np.empty((n_subjects, m), dtype=np.int64)
 
     for idx in range(n_subjects):
-        np.random.seed(seed + 2 + idx)  # Seed each subject separately
+        # np.random.seed(seed + 2 + idx)  # Seed each subject separately
 
         subj_mean = subj_means[idx]
         subj_var = subj_vars[idx]
@@ -116,7 +116,7 @@ def generate_samples_ind(
     curr_within_subj_var_value,
     m, n_subj, groupid, seed):
 
-    np.random.seed(seed)
+    # np.random.seed(seed)
     # 1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
     subj_means = np.random.normal(curr_between_subj_mean,
                                   np.sqrt(curr_between_subj_var),
@@ -124,7 +124,7 @@ def generate_samples_ind(
     subj_means = np.abs(subj_means) + EPS
 
     # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
-    np.random.seed(seed+1)
+    # np.random.seed(seed+1)
     subj_vars = [curr_within_subj_var_value for i in range(n_subj)]
 
     # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
@@ -166,7 +166,7 @@ def generate_samples_dep(
     TODO: add explanations
     """
 
-    np.random.seed(seed)
+    # np.random.seed(seed)
     # 1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
     subj_diffs = np.random.normal(between_phase_diff_mean,
                                   np.sqrt(between_phase_diff_var),
@@ -181,7 +181,7 @@ def generate_samples_dep(
     # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
     subj_means = np.abs(prev_between_subj_means + subj_diffs)
 
-    np.random.seed(seed+1)
+    # np.random.seed(seed+1)
     subj_vars = [curr_within_subj_var_value for i in range(n_subj)]
 
     # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.

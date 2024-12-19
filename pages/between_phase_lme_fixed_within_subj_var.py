@@ -10,13 +10,18 @@ from scipy import stats
 from itertools import product
 from collections import defaultdict
 
-# from basic import generate_samples, fn_variance_diff
-# import os
-# import sys
-# sys.path.append(".")
-# from src.simulation import *
 import statsmodels.formula.api as smf
-eps = 1e-8
+
+import os
+import sys
+# Get the absolute path to the root folder
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Add the src folder to sys.path
+src_path = os.path.join(root_path, 'src')
+sys.path.append(src_path)
+import simulation
+
+EPS = 1e-8
 
 # from rpy2.robjects import r, globalenv, conversion, default_converter
 # from rpy2.robjects.packages import importr, data
@@ -54,75 +59,6 @@ def lmer_py(data, formula):
     # mdf = md.fit()
     return mdf
 
-def generate_samples(
-    between_subj_mean, between_subj_var,
-    gt_within_subj_var_value,
-    m, n_subj, groupid, seed):
-
-    np.random.seed(seed)
-    # 1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
-    subj_means = np.random.normal(between_subj_mean,
-                                  np.sqrt(between_subj_var),
-                                  size=n_subj)
-    subj_means = np.abs(subj_means)
-
-    np.random.seed(seed+1)
-    # # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
-    # subj_vars = np.random.uniform(low=within_subj_var_left,
-    #                               high=within_subj_var_right,
-    #                               size=n_subj)
-    # subj_vars = np.abs(subj_vars)
-    subj_vars = [gt_within_subj_var_value for i in range(n_subj)]
-
-    samples = defaultdict(list)
-    for idx, (subj_mean, subj_var) in enumerate(zip(subj_means, subj_vars)):
-        np.random.seed(seed+2+idx)
-
-        # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
-        if subj_var == 0:
-            subj_sample = [subj_mean for i in range(m)]
-        else:
-            subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
-
-        samples["Phaseid"].extend([groupid for i in subj_sample])
-        samples["Subid"].extend([idx for i in subj_sample])
-        samples["value"].extend(subj_sample)
-        samples["ithMeasurement"].extend([i+groupid*m for i in range(1,m+1)])
-
-    return pd.DataFrame(samples)
-
-@st.cache_data
-def stats_synthesize(
-    between_subj_mean, between_subj_var,
-    gt_within_subj_var_value,
-    m,
-    n_subj,
-    groupid,
-    apply_log,
-    seed,
-    shift=0,
-    scale=1
-):
-    group = generate_samples(
-        between_subj_mean, between_subj_var,
-        gt_within_subj_var_value,
-        m        = m       ,
-        n_subj   = n_subj  ,
-        groupid  = groupid ,
-        seed     = seed
-    )
-
-    group["value"] = group["value"].apply(lambda x: x*scale+shift)
-    # * optional
-    if apply_log:
-        group["value"] = group["value"].apply(lambda x: np.log(x+1))
-
-    # # 4. Measure the `actual` $within\_subj\_var$ and $between\_subj\_var$ from sampled values.
-    # act_within_subj_mean=group.groupby("subid")["value"].mean()
-    # act_within_subj_var=group.groupby("subid")["value"].var()
-    # # act_between_subj_var=group.groupby("subid")["value"].mean().var()
-
-    return group
 
 def draw_bar(df, group, sorted_groups, title, xname="Pvalue", fontsize = 18):
     base = alt.Chart().transform_joinaggregate(
@@ -198,12 +134,13 @@ if __name__ == "__main__":
     with st.sidebar:
         with st.form("Predefined Configurations:"):
             selected_configuration = st.selectbox("Select a predefined configuration: ", predefined_configurations.keys())
-            apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
             total_trials = st.number_input("Total number of simulation trials: ", value=20)
+            with_dependency = st.selectbox("Apply dependency simulation: ", [True, False], index=0)
             # sample_size = st.number_input("Sample size: ", value=18)
             sample_sizes = st.pills("Sample size: ", options=[18,24,32,48], selection_mode="multi", default=[18, 24, 32, 48])
             st.form_submit_button("Submit")
             # apply_log = False
+            # apply_log = st.selectbox("Apply log transformation (log(value+1)): ", [True, False], index=1)
 
     default_configuration = predefined_configurations[selected_configuration]
     with st.form("Configuration:"):
@@ -242,70 +179,60 @@ if __name__ == "__main__":
         progress_text = f"Operation on sample size {sample_size} is in progress. Please wait."
         my_bar = st.progress(0.0, text=progress_text)
         for m in range(m0, mE):
-            for seed in range(0, total_trials):
-                percent_complete = ((m-m0) * total_trials + seed+1) / ((mE-m0) * total_trials)
+            for trial in range(0, total_trials):
+                percent_complete = ((m-m0) * total_trials + trial+1) / ((mE-m0) * total_trials)
                 my_bar.progress(percent_complete, text=progress_text)
 
-                seed = seed * 100
-                group1 = stats_synthesize(
+                seed = trial * 100000
+                group1, sampled_between_subj_means = simulation.stats_synthesize_ind(
                     gt_between_subj_mean1, gt_between_subj_var1,
                     gt_within_subj_var_value1,
                     m = m,
                     n_subj = sample_size,
                     groupid = 0,
-                    apply_log = apply_log,
                     seed = seed,
                 )
+                assert len(sampled_between_subj_means) == sample_size, f"{len(sampled_between_subj_means)}, {sample_size}"
 
-                group2 = stats_synthesize(
-                    gt_between_subj_mean2, gt_between_subj_var2,
-                    gt_within_subj_var_value2,
-                    m = m,
-                    n_subj = sample_size,
-                    groupid = 1,
-                    apply_log = apply_log,
-                    seed = seed+50,
-                    # seed = seed,
-                )
+                if with_dependency:
+                    group2, _ = simulation.stats_synthesize_dep(
+                        # sampled_between_subj_means,
+                        # (gt_between_subj_mean2 - gt_between_subj_mean1), gt_between_subj_var1+gt_between_subj_var2,
+                        sampled_between_subj_means,
+                        (gt_between_subj_mean2 - gt_between_subj_mean1), gt_between_subj_var2,
+                        gt_within_subj_var_value2,
+                        m = m,
+                        n_subj = sample_size,
+                        groupid = 1,
+                        # seed = seed+50000,
+                        seed = seed,
+                    )
+                else:
+                    group2, _ = simulation.stats_synthesize_ind(
+                        gt_between_subj_mean2, gt_between_subj_var2,
+                        gt_within_subj_var_value2,
+                        m = m,
+                        n_subj = sample_size,
+                        groupid = 1,
+                        # seed = seed+50000,
+                        seed = seed,
+                    )
+
+                group1, group2 = pd.DataFrame(group1), pd.DataFrame(group2)
 
                 df = pd.concat([group1, group2]).reset_index(drop=True)
                 # pvalue = lmer_r(df, lmer_formula)
                 # outputs["pvalue"].append(pvalue)
                 out = lmer_py(df, lmer_formula)
-                outputs["sample_size"].append(sample_size)
+                # st.write(out.pvalues)
                 outputs["pvalue"].append(out.pvalues.loc[target_var])
+                outputs["coefficient"].append(out.params.loc[target_var])
+                outputs["sample_size"].append(sample_size)
                 outputs["M"].append(m)
-
-                # if m == 1:
-                #     group1 = stats_synthesize(
-                #         gt_between_subj_mean1, gt_between_subj_var1,
-                #         gt_within_subj_var_value=0,
-                #         m = m,
-                #         n_subj = sample_size,
-                #         groupid = 0,
-                #         apply_log = apply_log,
-                #         seed = seed,
-                #     )
-
-                #     group2 = stats_synthesize(
-                #         gt_between_subj_mean2, gt_between_subj_var2,
-                #         gt_within_subj_var_value=0,
-                #         m = m,
-                #         n_subj = sample_size,
-                #         groupid = 1,
-                #         apply_log = apply_log,
-                #         seed = seed+50,
-                #     )
-
-                #     df = pd.concat([group1, group2]).reset_index(drop=True)
-                #     # pvalue = lmer_r(df, lmer_formula)
-                #     # outputs["pvalue"].append(pvalue)
-                #     out = lmer_py(df, lmer_formula)
-                #     outputs["pvalue"].append(out.pvalues.loc[target_var])
-                #     outputs["M"].append(0.5)
 
     df_stats = pd.DataFrame(outputs)
     df_stats["M"] = df_stats["M"].apply(lambda x: "1 var=0" if x == 0.5 else int(x))
+    df_stats["pvalue"] = df_stats.apply(lambda x: 1.0 if x["coefficient"] > 0 else x["pvalue"], axis=1)
     # sorted_M = ['1 var=0'] + [str(i) for i in range(m0, mE)]
     sorted_M = [str(i) for i in range(m0, mE)]
     # df_stats.to_csv(f"statistic_estimation_{sample_size}.csv")

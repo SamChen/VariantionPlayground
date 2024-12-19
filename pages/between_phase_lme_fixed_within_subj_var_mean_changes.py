@@ -103,7 +103,8 @@ if __name__ == "__main__":
                     m = m,
                     n_subj = sample_size,
                     groupid = 1,
-                    seed = seed+50000,
+                    # seed = seed+50000,
+                    seed = seed,
                 )
             else:
                 group2, _ = simulation.stats_synthesize_ind(
@@ -112,7 +113,8 @@ if __name__ == "__main__":
                     m = m,
                     n_subj = sample_size,
                     groupid = 1,
-                    seed = seed+50000,
+                    # seed = seed+50000,
+                    seed = seed,
                 )
 
             group1, group2 = pd.DataFrame(group1), pd.DataFrame(group2)
