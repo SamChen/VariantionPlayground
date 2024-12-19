@@ -64,11 +64,11 @@ parallel_study:
   pTau217_(U/mL):
     default_gt_between_subj_mean1:       0.45
     default_gt_between_subj_var1:        0.066049
-    default_gt_within_subj_percentage1:  30.0
+    default_gt_within_subj_percentage1:  100.0
 
     default_gt_between_subj_mean2:       0.34
     default_gt_between_subj_var2:        0.014
-    default_gt_within_subj_percentage2:  30.0
+    default_gt_within_subj_percentage2:  100.0
 
   GFAP_(pg/mL):
     default_gt_between_subj_mean1:       234.40
