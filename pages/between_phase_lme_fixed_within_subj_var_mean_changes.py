@@ -95,16 +95,18 @@ if __name__ == "__main__":
 
             if with_dependency:
                 group2, _ = simulation.stats_synthesize_dep(
-                    sampled_between_subj_means,
-                    (gt_between_subj_mean2 - gt_between_subj_mean1+0.01), gt_between_subj_var1+gt_between_subj_var2,
                     # sampled_between_subj_means,
-                    # (gt_between_subj_mean2 - gt_between_subj_mean1), gt_between_subj_var2,
+                    # (gt_between_subj_mean2 - gt_between_subj_mean1+0.01), gt_between_subj_var1+gt_between_subj_var2,
+                    sampled_between_subj_means,
+                    (gt_between_subj_mean2 - gt_between_subj_mean1), gt_between_subj_var2,
+                    # Use the following if we want to mimic Donanemab's outcomes
+                    # (gt_between_subj_mean2 - gt_between_subj_mean1+0.01), gt_between_subj_var2,
                     gt_within_subj_var_value2,
                     m = m,
                     n_subj = sample_size,
                     groupid = 1,
-                    # seed = seed+50000,
-                    seed = seed,
+                    seed = seed+50000,
+                    # seed = seed,
                 )
             else:
                 group2, _ = simulation.stats_synthesize_ind(
@@ -113,8 +115,8 @@ if __name__ == "__main__":
                     m = m,
                     n_subj = sample_size,
                     groupid = 1,
-                    # seed = seed+50000,
-                    seed = seed,
+                    seed = seed+50000,
+                    # seed = seed,
                 )
 
             group1, group2 = pd.DataFrame(group1), pd.DataFrame(group2)
@@ -147,4 +149,5 @@ if __name__ == "__main__":
         outputs.append(o)
     df_stats = pd.DataFrame(outputs)
     columns = ["ratio", "count","mean","variance","std","min","25%","50%","75%","max"]
-    st.write(df_stats[columns])
+    st.write(df_stats[columns].style.format({col: "{:.3f}" for col in ["mean","variance","std"]}))
+    # st.write(df_stats[columns], column_config=st.column_config.NumberColumn(format="%.3f"))
