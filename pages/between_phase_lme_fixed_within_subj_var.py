@@ -12,6 +12,7 @@ from collections import defaultdict
 
 import statsmodels.formula.api as smf
 
+import concurrent
 import os
 import sys
 # Get the absolute path to the root folder
@@ -58,6 +59,53 @@ def lmer_py(data, formula):
     assert mdf.converged == True
     # mdf = md.fit()
     return mdf
+
+
+def run(cfg, sample_size, m, seed):
+    seed = seed * 100000
+    group1, sampled_between_subj_means = simulation.stats_synthesize_ind(
+        cfg["gt_between_subj_mean1"], cfg["gt_between_subj_var1"],
+        cfg["gt_within_subj_var_value1"],
+        m = m,
+        n_subj = sample_size,
+        groupid = 0,
+        seed = seed,
+    )
+    assert len(sampled_between_subj_means) == sample_size, f"{len(sampled_between_subj_means)}, {sample_size}"
+
+    if cfg["with_dependency"]:
+        group2, _ = simulation.stats_synthesize_dep(
+            sampled_between_subj_means,
+            (cfg["gt_between_subj_mean2"] - cfg["gt_between_subj_mean1"]), cfg["gt_within_subj_var_value2"],
+            cfg["gt_within_subj_var_value2"],
+            m = m,
+            n_subj = sample_size,
+            groupid = 1,
+            seed = seed+50000,
+            # seed = seed,
+        )
+    else:
+        group2, _ = simulation.stats_synthesize_ind(
+            cfg["gt_between_subj_mean2"], cfg["gt_between_subj_var2"],
+            cfg["gt_within_subj_var_value2"],
+            m = m,
+            n_subj = sample_size,
+            groupid = 1,
+            seed = seed+50000,
+            # seed = seed,
+        )
+
+    group1, group2 = pd.DataFrame(group1), pd.DataFrame(group2)
+    df = pd.concat([group1, group2]).reset_index(drop=True)
+    out = lmer_py(df, cfg["lmer_formula"])
+
+    outputs = {}
+    outputs["sample_size_pergroup"] = sample_size
+    outputs["sample_size"] = sample_size
+    outputs["pvalue"]      = out.pvalues.loc[cfg["target_var"]]
+    outputs["coefficient"] = out.params.loc[cfg["target_var"]]
+    outputs["M"]           = m
+    return outputs
 
 
 def draw_bar(df, group, sorted_groups, title, xname="Pvalue", fontsize = 18):
@@ -175,60 +223,30 @@ if __name__ == "__main__":
     m0 = 1
     mE = 11
     # mE = 7
+    cfg = {}
+    total_trials           = total_trials
+    sample_sizes           = sample_sizes
+
+    cfg["lmer_formula"] = "value ~  Phaseid"
+    cfg["target_var"]   = "Phaseid"
+    cfg["gt_between_subj_mean1"]    = gt_between_subj_mean1
+    cfg["gt_between_subj_var1"]     = gt_between_subj_var1
+    cfg["gt_between_subj_mean2"]    = gt_between_subj_mean2
+    cfg["gt_between_subj_var2"]     = gt_between_subj_var2
+    cfg["gt_within_subj_var_value1"] = gt_within_subj_var_value1
+    cfg["gt_within_subj_var_value2"] = gt_within_subj_var_value2
+    cfg["with_dependency"] = with_dependency
+
+    configs = []
     for sample_size in sample_sizes:
-        progress_text = f"Operation on sample size {sample_size} is in progress. Please wait."
-        my_bar = st.progress(0.0, text=progress_text)
         for m in range(m0, mE):
             for trial in range(0, total_trials):
-                percent_complete = ((m-m0) * total_trials + trial+1) / ((mE-m0) * total_trials)
-                my_bar.progress(percent_complete, text=progress_text)
+                configs.append((cfg, sample_size, m, trial))
 
-                seed = trial * 100000
-                group1, sampled_between_subj_means = simulation.stats_synthesize_ind(
-                    gt_between_subj_mean1, gt_between_subj_var1,
-                    gt_within_subj_var_value1,
-                    m = m,
-                    n_subj = sample_size,
-                    groupid = 0,
-                    seed = seed,
-                )
-                assert len(sampled_between_subj_means) == sample_size, f"{len(sampled_between_subj_means)}, {sample_size}"
-
-                if with_dependency:
-                    group2, _ = simulation.stats_synthesize_dep(
-                        # sampled_between_subj_means,
-                        # (gt_between_subj_mean2 - gt_between_subj_mean1), gt_between_subj_var1+gt_between_subj_var2,
-                        sampled_between_subj_means,
-                        (gt_between_subj_mean2 - gt_between_subj_mean1), gt_between_subj_var2,
-                        gt_within_subj_var_value2,
-                        m = m,
-                        n_subj = sample_size,
-                        groupid = 1,
-                        # seed = seed+50000,
-                        seed = seed,
-                    )
-                else:
-                    group2, _ = simulation.stats_synthesize_ind(
-                        gt_between_subj_mean2, gt_between_subj_var2,
-                        gt_within_subj_var_value2,
-                        m = m,
-                        n_subj = sample_size,
-                        groupid = 1,
-                        # seed = seed+50000,
-                        seed = seed,
-                    )
-
-                group1, group2 = pd.DataFrame(group1), pd.DataFrame(group2)
-
-                df = pd.concat([group1, group2]).reset_index(drop=True)
-                # pvalue = lmer_r(df, lmer_formula)
-                # outputs["pvalue"].append(pvalue)
-                out = lmer_py(df, lmer_formula)
-                # st.write(out.pvalues)
-                outputs["pvalue"].append(out.pvalues.loc[target_var])
-                outputs["coefficient"].append(out.params.loc[target_var])
-                outputs["sample_size"].append(sample_size)
-                outputs["M"].append(m)
+        def fun_tmp(param):
+            return run(*param)
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            outputs = list(executor.map(fun_tmp, configs))
 
     df_stats = pd.DataFrame(outputs)
     df_stats["M"] = df_stats["M"].apply(lambda x: "1 var=0" if x == 0.5 else int(x))
