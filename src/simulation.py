@@ -211,3 +211,8 @@ def stats_synthesize_dep(
     if isinstance(group, tuple):
         group = convert_lists2dict(*group)
     return group, subj_means
+
+
+#
+def cal_between_phase_diff_mean(previous_phase_mean, current_phase_mean):
+    return current_phase_mean - previous_phase_mean

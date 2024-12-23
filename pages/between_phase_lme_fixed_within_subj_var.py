@@ -76,7 +76,7 @@ def run(cfg, sample_size, m, seed):
     if cfg["with_dependency"]:
         group2, _ = simulation.stats_synthesize_dep(
             sampled_between_subj_means,
-            (cfg["gt_between_subj_mean2"] - cfg["gt_between_subj_mean1"]), cfg["gt_within_subj_var_value2"],
+            simulation.cal_between_phase_diff_mean(cfg["gt_between_subj_mean1"], cfg["gt_between_subj_mean2"]), cfg["gt_within_subj_var_value2"],
             cfg["gt_within_subj_var_value2"],
             m = m,
             n_subj = sample_size,

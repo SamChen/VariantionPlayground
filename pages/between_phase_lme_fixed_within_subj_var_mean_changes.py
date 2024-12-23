@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     outputs = defaultdict(list)
     m = 1
-
+    shift = 0
     # for gt_within_subj_var_pct in range(0, 101, 10):
     for trial in range(0, total_trials):
         for gt_within_subj_var_pct in range(100, -1, -10):
@@ -98,7 +98,7 @@ if __name__ == "__main__":
                     # sampled_between_subj_means,
                     # (gt_between_subj_mean2 - gt_between_subj_mean1+0.01), gt_between_subj_var1+gt_between_subj_var2,
                     sampled_between_subj_means,
-                    (gt_between_subj_mean2 - gt_between_subj_mean1), gt_between_subj_var2,
+                    (gt_between_subj_mean2 - gt_between_subj_mean1+shift), gt_between_subj_var2,
                     # Use the following if we want to mimic Donanemab's outcomes
                     # (gt_between_subj_mean2 - gt_between_subj_mean1+0.01), gt_between_subj_var2,
                     gt_within_subj_var_value2,

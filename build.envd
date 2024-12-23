@@ -10,7 +10,7 @@ def build():
 
     install.conda()
     install.python("3.11")
-#    run(["pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu"])
+# run(["pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu"])
     install.python_packages(name=[
             "pyyaml",
             "scipy",
@@ -60,7 +60,8 @@ def build_editor_env():
          "sudo apt install software-properties-common -y",
          "sudo add-apt-repository -y ppa:deadsnakes/ppa",
          "sudo apt update",
-         "sudo apt install -y python3.10 python3.10-dev"
+         "sudo apt install -y python3.10 python3.10-dev",
+         "sudo rm -rf /var/lib/apt/lists/*"
     ])
     run(["sudo apt-get remove -y vim",
          "cd /home/envd/",
@@ -68,10 +69,12 @@ def build_editor_env():
          "cd vim/src",
          "./configure --enable-python3interp --with-python3-config-dir=/usr/lib/python3.10/config-* --with-python3-command=/usr/bin/python3.10 --without-x",
          "make",
-         "sudo make install"])
+         "sudo make install",
+         "sudo rm -rf /tmp/*"
+    ])
 
     run(["cd /home/envd/",
          "git clone https://github.com/SamChen/vim_config.git",
          "ln -s /home/envd/vim_config/init.vim /home/envd/.vimrc",
          "ln -s /home/envd/vim_config /home/envd/.vim"])
-    run(["pip uninstall -y polars", "pip install --no-input polars-lts-cpu fastexcel"])
+# run(["pip uninstall -y polars", "pip install --no-input polars-lts-cpu fastexcel"])
