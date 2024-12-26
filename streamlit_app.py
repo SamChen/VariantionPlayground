@@ -19,9 +19,9 @@ if __name__ == "__main__":
         page_icon="👋",
     )
 
-    st.write("# Research results expectation! 👋")
+    st.write("# SEED design experiments! 👋")
 
-    st.write("## Project introduction")
+    st.write("## Estimate the power of SEED design through simulations")
     st.write('''
              ''')
 
