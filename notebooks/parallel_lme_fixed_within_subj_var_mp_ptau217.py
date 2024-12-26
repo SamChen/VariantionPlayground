@@ -166,4 +166,4 @@ if __name__ == "__main__":
 
         df_stats = pd.DataFrame(outputs)
         df_stats["M"] = df_stats["M"].apply(lambda x: "1 var=0" if x == 0.5 else int(x))
-        df_stats.to_csv(os.path.join("outputs", f"statistic_estimation_parallel_{selected_configuration.split('_')[0]}_{ratio}.csv"))
+        df_stats.to_csv(os.path.join(output_folder, f"statistic_estimation_parallel_{selected_configuration.split('_')[0]}_{ratio}.csv"))

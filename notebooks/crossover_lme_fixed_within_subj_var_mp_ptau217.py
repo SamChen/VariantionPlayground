@@ -162,4 +162,4 @@ if __name__ == "__main__":
             outputs = list(executor.map(fun_tmp, configs))
 
         df_stats = pd.DataFrame(outputs)
-        df_stats.to_csv(os.path.join("outputs", f"statistic_estimation_crossover_{selected_configuration.split('_')[0]}_{ratio}.csv"))
+        df_stats.to_csv(os.path.join(output_folder, f"statistic_estimation_crossover_{selected_configuration.split('_')[0]}_{ratio}.csv"))
