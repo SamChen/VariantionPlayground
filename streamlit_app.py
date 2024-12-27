@@ -24,5 +24,3 @@ if __name__ == "__main__":
     st.write("## Estimate the power of SEED design through simulations")
     st.write('''
              ''')
-
-
