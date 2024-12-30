@@ -11,8 +11,10 @@ from itertools import product
 from collections import defaultdict
 
 import statsmodels.formula.api as smf
+import statsmodels.api as sm
 
-import concurrent
+
+from concurrent.futures import ProcessPoolExecutor
 import os
 import sys
 # Get the absolute path to the root folder
@@ -31,24 +33,31 @@ EPS = 1e-8
 # import rpy2.robjects.packages as rpackages
 
 # @st.cache_data
-def lmer_r(data, formula):
-    output = {}
-    # sleepstudy = pd.read_csv("sleepstudy.csv")
-    # st.write(sleepstudy)
-    with conversion.localconverter(default_converter + pandas2ri.converter):
-        # stats     = importr("stats")
-        # lme4_r    = importr('lme4')
-        base      = importr('base')
-        lme4_test = importr('lmerTest')
-
-        r_out = lme4_test.lmer(formula, dat=data)
-        # r_out = lme4_test.lmer("Reaction~Days + (Days|Subject)", dat=sleepstudy)
-        summary = base.summary(r_out)
-        # st.write(lme4_test.get_coefmat(r_out))
-    return summary["coefficients"][-1,-1]
+# def lmer_r(data, formula):
+#     output = {}
+#     # sleepstudy = pd.read_csv("sleepstudy.csv")
+#     # st.write(sleepstudy)
+#     with conversion.localconverter(default_converter + pandas2ri.converter):
+#         # stats     = importr("stats")
+#         # lme4_r    = importr('lme4')
+#         base      = importr('base')
+#         lme4_test = importr('lmerTest')
+#
+#         r_out = lme4_test.lmer(formula, dat=data)
+#         # r_out = lme4_test.lmer("Reaction~Days + (Days|Subject)", dat=sleepstudy)
+#         summary = base.summary(r_out)
+#         # st.write(lme4_test.get_coefmat(r_out))
+#     return summary["coefficients"][-1,-1]
 
 # @st.cache_data
-def lmer_py(data, formula):
+def lmer_py(data: pd.DataFrame, formula: str):
+    """lmer_py.
+
+    :param data:
+    :type data: pd.DataFrame
+    :param formula:
+    :type formula: str
+    """
     md = smf.mixedlm(formula,
                      data=data,
                      groups=data["Subid"],
@@ -56,8 +65,7 @@ def lmer_py(data, formula):
                      # vc_formula={"ithMeasurement": "0+ithMeasurement"}
                      )
     mdf = md.fit(method=["powell", "lbfgs"])
-    assert mdf.converged == True
-    # mdf = md.fit()
+    assert mdf.converged
     return mdf
 
 
@@ -147,7 +155,16 @@ def draw_bar(df, group, sorted_groups, title, xname="Pvalue", fontsize = 18):
     return bar_chart
 
 
-def draw_line(df, pvalue_threshold = 0.05):
+def draw_line(df: pd.DataFrame, pvalue_threshold: float = 0.05) -> alt.Chart:
+    """draw_line.
+
+    :param df:
+    :type df: pd.DataFrame
+    :param pvalue_threshold:
+    :type pvalue_threshold: float
+    :rtype: alt.Chart
+    """
+
     df = df.copy()
     df[f"pvalue lower than {pvalue_threshold}"] = df["pvalue"] <= pvalue_threshold
     sign_df = df.groupby(["M","sample_size"])[f"pvalue lower than {pvalue_threshold}"].aggregate(["sum", "count"]).reset_index()
@@ -245,7 +262,7 @@ if __name__ == "__main__":
 
         def fun_tmp(param):
             return run(*param)
-        with concurrent.futures.ProcessPoolExecutor() as executor:
+        with ProcessPoolExecutor() as executor:
             outputs = list(executor.map(fun_tmp, configs))
 
     df_stats = pd.DataFrame(outputs)
@@ -258,10 +275,3 @@ if __name__ == "__main__":
 
     chart = draw_line(df_stats, pvalue_threshold=0.05)
     st.altair_chart(chart, theme=None)
-
-    # bar_chart = draw_bar(df_stats, group, sorted_groups=sorted_M, title=f"Sample size: {sample_size}",
-    #                      xname="pvalue")
-
-    # bar_chart.save(f"outputs/pTau217_n{sample_size}.png", ppi=400)
-    # df_stats.to_csv(f"outputs/pTau217_n{sample_size}.csv")
-    # st.altair_chart(bar_chart, theme="streamlit")

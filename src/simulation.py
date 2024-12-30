@@ -8,7 +8,7 @@ from numba.core import types
 from numba.typed import Dict, List
 
 EPS = 1e-4
-SHIFT = 1000
+NUMBA_MODE = True
 
 def conditional_decorator(condition, decorator):
     """Applies a decorator if the condition is True, otherwise does nothing."""
@@ -26,7 +26,6 @@ def my_decorator(func):
         return result
     return wrapper
 
-NUMBA_MODE = True
 
 # # TODO: unify the sample synthesis process.
 # def basic_synthesis_data(subj_means, subj_vars, seed, groupid, m):
@@ -51,9 +50,8 @@ NUMBA_MODE = True
 
 
 
-# @njit(parallel=True)
 @njit
-def basic_synthesis_data_numba(subj_means, subj_vars, seed, groupid, m):
+def basic_synthesis_data_numba(subj_means: np.ndarray, subj_vars: np.ndarray, seed: int, groupid: int, m: int):
     """
     Generates synthetic data for multiple subjects.
 
@@ -93,12 +91,20 @@ def basic_synthesis_data_numba(subj_means, subj_vars, seed, groupid, m):
         samples_Phaseid[idx, :] = groupid
         samples_Subid[idx, :] = idx
         samples_value[idx, :] = subj_sample
-        samples_ithMeasurement[idx, :] = np.arange(1 + groupid * m, m + 1 + groupid * m)
+        samples_ithMeasurement[idx, :] = np.arange(1, m + 1)
 
     return samples_Phaseid, samples_Subid, samples_value, samples_ithMeasurement
 
 
 def convert_lists2dict(samples_Phaseid, samples_Subid, samples_value, samples_ithMeasurement):
+    """convert_lists2dict.
+    Due to numba's limited support of python Dict, we need a seperate function to reformat lists of data to a Dict
+
+    :param samples_Phaseid:
+    :param samples_Subid:
+    :param samples_value:
+    :param samples_ithMeasurement:
+    """
     samples = defaultdict(list)
     for idx in range(len(samples_Phaseid)):
         sp, ss, sv, si = samples_Phaseid[idx], samples_Subid[idx], samples_value[idx], samples_ithMeasurement[idx]
@@ -115,6 +121,16 @@ def generate_samples_ind(
     curr_between_subj_mean, curr_between_subj_var,
     curr_within_subj_var_value,
     m, n_subj, groupid, seed):
+    """Assuming that the sample generation of the current Phase is independent.
+
+    :param curr_between_subj_mean:
+    :param curr_between_subj_var:
+    :param curr_within_subj_var_value:
+    :param m:
+    :param n_subj: total number of subjects
+    :param groupid:
+    :param seed:
+    """
 
     np.random.seed(seed)
     # 1. Use `ground truth` $between\_subj\_mean$ and $between\_subj\_var$ to sample the mean value for each subject
@@ -125,7 +141,7 @@ def generate_samples_ind(
 
     # 2. Use `ground truth` **mean over within subject variance** and **variance over within subject variance** to sample the $within\_subj\_var$ for each subject.
     np.random.seed(seed+1)
-    subj_vars = [curr_within_subj_var_value for i in range(n_subj)]
+    subj_vars = np.array([curr_within_subj_var_value for i in range(n_subj)], dtype=np.float64)
 
     # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
     samples = basic_synthesis_data_numba(subj_means, subj_vars, seed, groupid, m)
@@ -142,6 +158,16 @@ def stats_synthesize_ind(
     groupid,
     seed,
 ):
+    """Pipeline function for independent sampling.
+
+    :param curr_between_subj_mean:
+    :param curr_between_subj_var:
+    :param curr_within_subj_var_value:
+    :param m:
+    :param n_subj:
+    :param groupid:
+    :param seed:
+    """
     group, subj_means = generate_samples_ind(
         curr_between_subj_mean, curr_between_subj_var,
         curr_within_subj_var_value,
@@ -162,8 +188,16 @@ def generate_samples_dep(
     between_phase_diff_mean, between_phase_diff_var,
     curr_within_subj_var_value,
     m, n_subj, groupid, seed):
-    """
-    TODO: add explanations
+    """Assuming previous Phase will impact the sampling.
+
+    :param prev_between_subj_means:
+    :param between_phase_diff_mean:
+    :param between_phase_diff_var:
+    :param curr_within_subj_var_value:
+    :param m:
+    :param n_subj:
+    :param groupid:
+    :param seed:
     """
 
     np.random.seed(seed)
@@ -182,7 +216,7 @@ def generate_samples_dep(
     subj_means = np.abs(prev_between_subj_means + subj_diffs)
 
     np.random.seed(seed+1)
-    subj_vars = [curr_within_subj_var_value for i in range(n_subj)]
+    subj_vars = np.array([curr_within_subj_var_value for i in range(n_subj)], dtype=np.float64)
 
     # 3. For each subject, we sample $M$ values/measurements based on that subject's **mean** and $within\_subj\_var$.
     samples = basic_synthesis_data_numba(subj_means, subj_vars, seed, groupid, m)
@@ -199,6 +233,17 @@ def stats_synthesize_dep(
     groupid,
     seed,
 ):
+    """Pipeline function for dependent sampling process.
+
+    :param prev_between_subj_means:
+    :param between_phase_diff_mean:
+    :param between_phase_diff_var:
+    :param curr_within_subj_var_value:
+    :param m:
+    :param n_subj:
+    :param groupid:
+    :param seed:
+    """
     group, subj_means = generate_samples_dep(
         prev_between_subj_means,
         between_phase_diff_mean, between_phase_diff_var,

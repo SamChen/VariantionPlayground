@@ -5,8 +5,9 @@ def build():
     base(dev=True)
     shell("zsh")
     install.apt_packages(name=["ripgrep", "libyaml-dev", "g++", "libgl1", "git", "cmake"])
-    build_editor_env()
-    git_config(name="SamChen", email="samjat2012cl@gmail.com", editor="vim")
+#    build_editor_env()
+#    git_config(name="SamChen", email="samjat2012cl@gmail.com", editor="vim")
+    git_config(name="SamChen", email="samjat2012cl@gmail.com")
 
     install.conda()
     install.python("3.11")
@@ -25,6 +26,7 @@ def build():
     install_dataframe_packages()
     install_chart_packages()
     configure_streamlit(9999)
+
 
 def install_dataframe_packages():
     install.python_packages(name=[

@@ -12,6 +12,7 @@ from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
 import os
 import sys
+import yaml
 # Get the absolute path to the root folder
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the src folder to sys.path
@@ -32,7 +33,6 @@ def lmer_py(data, formula):
                      )
     mdf = md.fit(method=["powell", "lbfgs"])
     assert mdf.converged == True
-    # mdf = md.fit()
     return mdf
 
 
@@ -151,7 +151,6 @@ if __name__ == "__main__":
     st.set_page_config(layout="wide")
 
     st.write("## Playground")
-    import yaml
     with open("predefined_biomarker_config.yaml", 'r') as f:
         predefined_configurations = yaml.safe_load(f)["parallel_study"]
     with st.sidebar:
