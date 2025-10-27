@@ -25,7 +25,7 @@ def build():
     ])
     install_dataframe_packages()
     install_chart_packages()
-    configure_streamlit(9999)
+#    configure_streamlit(9999)
 
 
 def install_dataframe_packages():

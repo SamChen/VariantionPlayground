@@ -50,7 +50,7 @@ def my_decorator(func):
 
 
 
-@njit
+# @njit
 def basic_synthesis_data_numba(subj_means: np.ndarray, subj_vars: np.ndarray, seed: int, groupid: int, m: int):
     """
     Generates synthetic data for multiple subjects.
@@ -83,7 +83,11 @@ def basic_synthesis_data_numba(subj_means: np.ndarray, subj_vars: np.ndarray, se
         if subj_var == 0:
             subj_sample = np.full(m, subj_mean) # Use np.full for efficiency
         else:
-            subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
+            subj_sample = get_positive_truncated_normal_samples(
+                subj_mean, np.sqrt(subj_var),
+                size=m
+            )
+            # subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
             # subj_sample = stats.truncnorm.rvs(EPS, np.inf,
             #                                   loc=subj_mean,
             #                                   scale=np.sqrt(subj_var),
@@ -94,6 +98,28 @@ def basic_synthesis_data_numba(subj_means: np.ndarray, subj_vars: np.ndarray, se
         samples_ithMeasurement[idx, :] = np.arange(1, m + 1)
 
     return samples_Phaseid, samples_Subid, samples_value, samples_ithMeasurement
+
+
+def get_positive_truncated_normal_samples(mean, std_dev, size):
+    """
+    Generates positive samples from a truncated normal distribution.
+
+    Args:
+        mean (float): The desired mean of the parent (untruncated) distribution.
+        std_dev (float): The desired standard deviation of the parent distribution.
+        size (int): The number of samples to generate.
+
+    Returns:
+        np.ndarray: An array of positive samples from the truncated distribution.
+    """
+    # The truncation points for truncnorm are defined in terms of standard
+    # deviations from the mean of the parent distribution.
+    # To truncate at zero, the lower bound 'a' is (0 - mean) / std_dev.
+    a = (0 - mean) / std_dev
+    b = np.inf  # Upper bound is infinity
+
+    # Generate the truncated normal random variables
+    return stats.truncnorm.rvs(a, b, loc=mean, scale=std_dev, size=size)
 
 
 def convert_lists2dict(samples_Phaseid, samples_Subid, samples_value, samples_ithMeasurement):
@@ -116,7 +142,7 @@ def convert_lists2dict(samples_Phaseid, samples_Subid, samples_value, samples_it
 
 
 
-@njit
+# @njit
 def generate_samples_ind(
     curr_between_subj_mean, curr_between_subj_var,
     curr_within_subj_var_value,
@@ -182,7 +208,7 @@ def stats_synthesize_ind(
 
 
 # TODO: add solution for variance sampling using uniform distribution
-@njit
+# @njit
 def generate_samples_dep(
     prev_between_subj_means,
     between_phase_diff_mean, between_phase_diff_var,
