@@ -83,11 +83,11 @@ def basic_synthesis_data_numba(subj_means: np.ndarray, subj_vars: np.ndarray, se
         if subj_var == 0:
             subj_sample = np.full(m, subj_mean) # Use np.full for efficiency
         else:
-            subj_sample = get_positive_truncated_normal_samples(
-                subj_mean, np.sqrt(subj_var),
-                size=m
-            )
-            # subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
+            # subj_sample = get_positive_truncated_normal_samples(
+            #     subj_mean, np.sqrt(subj_var),
+            #     size=m
+            # )
+            subj_sample = np.random.normal(subj_mean, np.sqrt(subj_var), m)
             # subj_sample = stats.truncnorm.rvs(EPS, np.inf,
             #                                   loc=subj_mean,
             #                                   scale=np.sqrt(subj_var),
