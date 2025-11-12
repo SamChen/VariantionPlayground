@@ -1,1 +1,21 @@
-**/__pycache__/
+# Ignore directories starting with 'output' or 'outputs'
+output*/
+
+# Ignore figures
+figs*/
+
+# Ignore history, this is for backup
+history/
+
+# Ignore caches
+*/.ipynb_checkpoints/
+.DS_Store
+
+
+# Python specific
+__pycache__/
+*.pyc
+
+# Environment
+.env
+venv/

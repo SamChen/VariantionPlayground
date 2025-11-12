@@ -1,0 +1,116 @@
+# predefined biomarker configuration
+#
+# still use 10% due to the population_(age) and unit mismatch between donanemab's report and Brum's paper.
+#
+crossover_study:
+  # "1" refers to phase 1, "2" refers to phase 2.
+  pTau217_(U/mL):
+    default_gt_between_subj_mean1:       0.41
+    default_gt_between_subj_var1:        0.053
+    default_gt_within_subj_percentage1:  60.0
+
+    default_gt_between_subj_mean2:       0.34
+    default_gt_between_subj_var2:        0.014
+    default_gt_within_subj_percentage2:  60.0
+
+  GFAP_(pg/mL):
+    default_gt_between_subj_mean1:       214.43
+    default_gt_between_subj_var1:        7901.61
+    default_gt_within_subj_percentage1:  15.0
+
+    default_gt_between_subj_mean2:       203.12
+    default_gt_between_subj_var2:        8219.42
+    default_gt_within_subj_percentage2:  15.0
+
+  NfL_(pg/mL):
+    default_gt_between_subj_mean1:       21.91
+    default_gt_between_subj_var1:        72.10
+    default_gt_within_subj_percentage1:  11.0
+
+    default_gt_between_subj_mean2:       25.56
+    default_gt_between_subj_var2:        129.73
+    default_gt_within_subj_percentage2:  11.0
+
+  AB42_(pg/mL):
+    default_gt_between_subj_mean1:       5.54
+    default_gt_between_subj_var1:        1.95
+    default_gt_within_subj_percentage1:  38.0
+
+    default_gt_between_subj_mean2:       6.04
+    default_gt_between_subj_var2:        2.25
+    default_gt_within_subj_percentage2:  38.0
+
+  AB40_(pg/mL):
+    default_gt_between_subj_mean1:       114.23
+    default_gt_between_subj_var1:        806.28
+    default_gt_within_subj_percentage1:  40.0
+
+    default_gt_between_subj_mean2:       120.53
+    default_gt_between_subj_var2:        1019.84
+    default_gt_within_subj_percentage2:  40.0
+
+  AB4240_(N):
+    default_gt_between_subj_mean1:       0.049
+    default_gt_between_subj_var1:        7.921e-5
+    default_gt_within_subj_percentage1:  16.0
+
+    default_gt_between_subj_mean2:       0.051
+    default_gt_between_subj_var2:        9.22e-5
+    default_gt_within_subj_percentage2:  16.0
+
+
+parallel_study:
+  # "1" refers to control group, "2" refers to experimental group.
+  pTau217_(U/mL):
+    default_gt_between_subj_mean1:       0.45
+    default_gt_between_subj_var1:        0.066049
+    default_gt_within_subj_percentage1:  100.0
+
+    default_gt_between_subj_mean2:       0.34
+    default_gt_between_subj_var2:        0.014
+    default_gt_within_subj_percentage2:  100.0
+
+  GFAP_(pg/mL):
+    default_gt_between_subj_mean1:       234.40
+    default_gt_between_subj_var1:        10658.08
+    default_gt_within_subj_percentage1:  15.0
+
+    default_gt_between_subj_mean2:       203.12
+    default_gt_between_subj_var2:        8219.42
+    default_gt_within_subj_percentage2:  15.0
+
+  NfL_(pg/mL):
+    default_gt_between_subj_mean1:       28.12
+    default_gt_between_subj_var1:        671.12
+    default_gt_within_subj_percentage1:  11.0
+
+    default_gt_between_subj_mean2:       25.56
+    default_gt_between_subj_var2:        129.73
+    default_gt_within_subj_percentage2:  11.0
+
+  AB42_(pg/mL):
+    default_gt_between_subj_mean1:       6.33
+    default_gt_between_subj_var1:        2.7456
+    default_gt_within_subj_percentage1:  38.0
+
+    default_gt_between_subj_mean2:       6.04
+    default_gt_between_subj_var2:        2.25
+    default_gt_within_subj_percentage2:  38.0
+
+  AB40_(pg/mL):
+    default_gt_between_subj_mean1:       127.35
+    default_gt_between_subj_var1:        1315.08
+    default_gt_within_subj_percentage1:  40.0
+
+    default_gt_between_subj_mean2:       120.53
+    default_gt_between_subj_var2:        1019.84
+    default_gt_within_subj_percentage2:  40.0
+
+  AB4240_(N):
+    default_gt_between_subj_mean1:       0.051
+    default_gt_between_subj_var1:        6.889e-5
+    default_gt_within_subj_percentage1:  16.0
+
+    default_gt_between_subj_mean2:       0.051
+    default_gt_between_subj_var2:        9.22e-5
+    default_gt_within_subj_percentage2:  16.0
