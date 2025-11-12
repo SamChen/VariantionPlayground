@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the number of trials for the simulations
-num_trials=1000
+num_trials=10
 
 # Define the number of repeated measures for each group
 # You can change these values to any desired number.
@@ -54,40 +54,3 @@ for efficacy in "${efficacies[@]}"; do
 done
 
 echo "All LME simulations completed."
-# num_trials=1000
-#
-#
-# efficacy=1.0
-# python3.11 ./crossover_lme_fixed_within_subj_var_mp_ptau217.py --output-folder "outputs_e${efficacy}_m44" --num-trials $num_trials \
-#     --efficacy $efficacy \
-#     --repeat-measure-grp1 4 \
-#     --repeat-measure-grp2 4 \
-#     --with-dependency
-#
-# python3.11 ./parallel_lme_fixed_within_subj_var_mp_ptau217.py  --output-folder "outputs_e${efficacy}_m44" --num-trials $num_trials \
-#     --efficacy $efficacy
-#
-# #########################################################################################################
-# efficacy=0.50
-# python3.11 ./crossover_lme_fixed_within_subj_var_mp_ptau217.py --output-folder "outputs_e${efficacy}_m44" --num-trials $num_trials \
-#     --efficacy $efficacy \
-#     --repeat-measure-grp1 4 \
-#     --repeat-measure-grp2 4 \
-#     --with-dependency
-#
-# python3.11 ./parallel_lme_fixed_within_subj_var_mp_ptau217.py  --output-folder "outputs_e${efficacy}_m44" --num-trials $num_trials \
-#     --efficacy $efficacy
-#
-#
-# #########################################################################################################
-# efficacy=0.25
-# python3.11 ./crossover_lme_fixed_within_subj_var_mp_ptau217.py --output-folder "outputs_e${efficacy}_m44" --num-trials $num_trials \
-#     --efficacy $efficacy \
-#     --repeat-measure-grp1 4 \
-#     --repeat-measure-grp2 4 \
-#     --with-dependency
-#
-# python3.11 ./parallel_lme_fixed_within_subj_var_mp_ptau217.py  --output-folder "outputs_e${efficacy}_m44" --num-trials $num_trials \
-#     --efficacy $efficacy
-#
-# #########################################################################################################
